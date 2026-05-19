@@ -1,0 +1,102 @@
+[
+  {
+    "text": "BUG: read_json(line=True) returns `Index` instead of `RangeIndex` in 2.2\n\n```python\nIn [2]: import pandas as pd; from io import StringIO\n\nIn [3]:             data = \"\"\"\\\n   ...: {\"a\": 1, \"b\": 2}\n   ...: {\"a\": 3, \"b\": 4}\"\"\"\n\nIn [4]: pd.read_json(StringIO(data), lines=True).index\nOut[4]: Index([0, 1], dtype='int64').  # main\nOut[3]: RangeIndex(start=0, stop=2, step=1). # 2.1\n```",
+    "label": "bug"
+  },
+  {
+    "text": "BUG: Circle CI deprecates images\n\n### Pandas version checks\n\n- [X] I have checked that this issue has not already been reported.\n\n- [X] I have confirmed this bug exists on the [latest version](https://pandas.pydata.org/docs/whatsnew/index.html) of pandas.\n\n- [X] I have confirmed this bug exists on the [main branch](https://pandas.pydata.org/docs/dev/getting_started/install.html#installing-the-development-version-of-pandas) of pandas.\n\n\n### Reproducible Example\n\n```python\nCi tests failing because \"This job was rejected because the image is unavailable\"\n```\n\n\n### Issue Description\n\nCircle CI deprecates images: https://discuss.circleci.com/t/linux-image-deprecations-and-eol-for-2024/50177.\n\n\n### Expected Behavior\n\nUpdate to supported images\n\n### Installed Versions\n\n<details>\n\nall\n\n</details>",
+    "label": "bug"
+  },
+  {
+    "text": "When excel cell with 0x005F_FFFF, pandas read excel with wrong output read value 0FFFF\n\npd.read_excel with output 0FFFF\nhowever\uff0c 0x004F_FFFF, pd read the right value 0x004F_FFFF",
+    "label": "bug"
+  },
+  {
+    "text": "BUG: assert_index_equal defaults to check_exact_index=False on integers\n\nRef: https://github.com/pandas-dev/pandas/pull/57341#discussion_r1486812938",
+    "label": "bug"
+  },
+  {
+    "text": "BUG: Implement `fillna(..., limit=x)` for EAs\n\nRef #57983\n\nCurrently `EA.fillna` has a limit argument but it is ignored. This was deprecated during 2.x, but that deprecation was removed in the referenced PR. We should keep and implement `limit` here.",
+    "label": "bug"
+  },
+  {
+    "text": "BUG: to_dict inconsistency\n\n### Pandas version checks\n\n- [X] I have checked that this issue has not already been reported.\n\n- [X] I have confirmed this bug exists on the [latest version](https://pandas.pydata.org/docs/whatsnew/index.html) of pandas.\n\n- [X] I have confirmed this bug exists on the [main branch](https://pandas.pydata.org/docs/dev/getting_started/install.html#installing-the-development-version-of-pandas) of pandas.\n\n\n### Reproducible Example\n\n```python\nimport pandas as pd\ndf = ....\ndf.to_dict()\n```\n\n\n### Issue Description\n\nto dict manipulate float values which could not be restored\n\n### Expected Behavior\n\nlossless deserialization \n\n### Installed Versions\n\n2.1.4",
+    "label": "bug"
+  },
+  {
+    "text": "BUG: .str.contains `na` validation\n\n```python\nimport pandas as pd\nimport pyarrow as pa\n\nser = pd.Series(['a', 'b', None], dtype=pd.StringDtype(storage=\"pyarrow\"))\nser2 = ser.astype(pd.ArrowDtype(pa.string()))\n\nser.str.contains(\"foo\", na=\"bar\")  # <- casts \"bar\" to True\nser2.str.contains(\"foo\", na=\"bar\")  # <- raises\n```\n\nThere's a small difference in the _str_contains methods in ArrowExtensionArray vs ArrowStringArray.  The latter uses `bool(na)` when filling null entries, the former uses `na` directly.\n\nI prefer the no-casting behavior, but mainly think we should be consistent.\n\n<b>update</b> Looks like `pandas/tests/strings/test_find_replace.py::test_contains_nan` specifically tests `na=\"foo\"`",
+    "label": "bug"
+  },
+  {
+    "text": "ENH: Support case insensitive for merge\n\n### Feature Type\n\n- [ ] Adding new functionality to pandas\n\n- [X] Changing existing functionality in pandas\n\n- [ ] Removing existing functionality in pandas\n\n\n### Problem Description\n\nMaybe the merge method should add a case parameter to identify case insensitive.\n\n### Feature Description\n\n```\ndef merge(self, other, on, case=False, ...):\n    self.on_ = self.on.str.lower()\n    other.on_ = other.on.str.lower()\n    ...\n```\n\n### Alternative Solutions\n\nAdd a param `case` to the method merge of dataframe like:`a.merge(b, case=False)`\uff0cto identify case insensitive.\n\n### Additional Context\n\n_No response_",
+    "label": "feature"
+  },
+  {
+    "text": "ENH: to_sql to consider upsert on oracle\n\n### Feature Type\n\n- [ ] Adding new functionality to pandas\n\n- [X] Changing existing functionality in pandas\n\n- [ ] Removing existing functionality in pandas\n\n\n### Problem Description\n\nI would like to have pandas to consider easy implementation of upsert with specific focus on Oracle databases\n\n### Feature Description\n\nhttps://github.com/pandas-dev/pandas/issues/14553\n\nthe above issue doesn't confirm if it is implemented for oracle\n\n### Alternative Solutions\n\nAlternate solutions include creating merge statements on the fly\n\n### Additional Context\n\n_No response_",
+    "label": "feature"
+  },
+  {
+    "text": "API: Add skipna to groupby ops\n\nSiphoning off from #56939. The following methods do not have a skipna argument in groupby, but do have such an argument on the Series/DataFrame variant.\n\n- [ ] max\n- [ ] mean\n- [ ] median\n- [ ] min\n- [ ] prod\n- [ ] sem\n- [ ] std\n- [ ] sum\n- [ ] var",
+    "label": "feature"
+  },
+  {
+    "text": "ENH: Add 'dropna' setting to relplot\n\n### Feature Type\n\n- [X] Adding new functionality to pandas\n\n- [ ] Changing existing functionality in pandas\n\n- [ ] Removing existing functionality in pandas\n\n\n### Problem Description\n\nReplot extends FacetGrid but it has no dropna option.\n\n\n### Feature Description\n\nAdd new parameter to relplot like below and send it to FacetGrid\n\n```python\ndef relplot(..., dropna=False):\n   ...\n```\n\n### Alternative Solutions\n\nI should've called dropna for my dataframe, before calling relplot to ignore rows with nan.\n\n### Additional Context\n\n_No response_",
+    "label": "feature"
+  },
+  {
+    "text": "ENH: Allow users to disable PerformanceWarning\n\nPart of the way toward #55385. Even if we decide not to implement #55385 (i.e. performance warnings are disabled by default), I think this is a good option for users to have.\n\nI propose adding an option, `mode.performance_warnings` defaulting to True, that users could set to False to disable all PerformanceWarnings from being raised. The difference between this and #55385 is just changing the default value.\n\nI opened #56921 to show the implementation.\n\nWould like to get feedback on the general idea and happy to bikeshed the option name. Since this is impacts many places, cc @pandas-dev/pandas-core.",
+    "label": "feature"
+  },
+  {
+    "text": "ENH: DataFrame.duplicated() should have default `keep` parameter as False\n\n### Feature Type\n\n- [X] Changing existing functionality in pandas\n\n### Problem Description\n\n`df.duplicated()` should return all of duplicates in my opinion. \nDefault parameter is now `first` but I think it's not proper.\n\n### Feature Description\n\n```\ndef duplicated(\n        self,\n        subset: Hashable | Sequence[Hashable] | None = None,\n        keep: DropKeep = \"first\",\n    ) -> Series: ...\n```\n\n### Alternative Solutions\n\n```\ndef duplicated(\n        self,\n        subset: Hashable | Sequence[Hashable] | None = None,\n        keep: DropKeep = False,\n    ) -> Series: ...\n```\n\n### Additional Context\n\nI made pull request, but I just closed it.\n\nNeed discussions!",
+    "label": "feature"
+  },
+  {
+    "text": "ENH: Be able to set dtype before creating a new column\n\n### Feature Type\n\n- [X] Adding new functionality to pandas\n\n- [X] Changing existing functionality in pandas\n\n- [ ] Removing existing functionality in pandas\n\n\n### Problem Description\n\nSo one can do \n```\ndf[\"New_Col\"] = 0\ndf[\"New_Col\"] = df[\"New_Col\"].astype(\"int8\")\n```\nBut its not possible to do \n```\ndf[\"New_Col\"] = 0.astype(\"int8\")\n```\n\nWould be nice to find a solution so one can set dtype before creating a new column.\n\n### Feature Description\n\nSee problem descripion\n\n### Alternative Solutions\n\nSe problem description\n\n### Additional Context\n\n_No response_",
+    "label": "feature"
+  },
+  {
+    "text": "Restructure offset deprecation whatsnew\n\n### Pandas version checks\n\n- [X] I have checked that the issue still exists on the latest versions of the docs on `main` [here](https://pandas.pydata.org/docs/dev/)\n\n\n### Location of the documentation\n\nPersonally, I'd prefer having a table with for -> after instead of the text blocks, that might make it easier to use. \n\nShorter headline would also be helpful I guess and direct folks more towards the direct mapping\n\nthoughts @natmokval ?\n\n### Documentation problem\n\nsee\n\n### Suggested fix for documentation\n\nsee",
+    "label": "docs"
+  },
+  {
+    "text": "DOC: Add note about `git fetch upstream --tags` to contributing guide\n\n### Pandas version checks\n\n- [X] I have checked that the issue still exists on the latest versions of the docs on `main` [here](https://pandas.pydata.org/docs/dev/)\n\n\n### Location of the documentation\n\nhttps://pandas.pydata.org/pandas-docs/stable/development/contributing_environment.html#\n\n### Documentation problem\n\nIf you are working from an old fork that doesn't sync tags with pandas upstream, versioneer will install pandas with a really old version tag which other dependencies like pyarrow don't like\n\n### Suggested fix for documentation\n\nAdd a note that users may want to run `git fetch upstream --tags` before installing",
+    "label": "docs"
+  },
+  {
+    "text": "DOC: Grammar Error in 'Contributing to pandas' documentation\n\n### Pandas version checks\n\n- [X] I have checked that the issue still exists on the latest versions of the docs on `main` [here](https://pandas.pydata.org/docs/dev/)\n\n\n### Location of the documentation\n\nhttps://pandas.pydata.org/docs/development/contributing.html\n\n### Documentation problem\n\n![image](https://github.com/pandas-dev/pandas/assets/114708547/0527c2d0-4105-4583-9d54-f89163ad8d2e)\n\n\n### Suggested fix for documentation\n\nI think it must be changed to \n\n> \"When reporting an issue or request\"",
+    "label": "docs"
+  },
+  {
+    "text": "DOC: Remove references to `AxesSubPlot`\n\n### Pandas version checks\n\n- [X] I have checked that the issue still exists on the latest versions of the docs on `main` [here](https://pandas.pydata.org/docs/dev/)\n\n\n### Location of the documentation\n\nhttps://pandas.pydata.org/docs/dev/reference/api/pandas.core.groupby.SeriesGroupBy.hist.html  (and other places)\n\n### Documentation problem\n\n`AxesSubplot` was removed from `matplotlib`, so we need to remove it from our docs.\n\nSee https://github.com/matplotlib/matplotlib/issues/18222/\n\n### Suggested fix for documentation\n\nChange the type from `AxesSubplot` in the docs to `Axes`",
+    "label": "docs"
+  },
+  {
+    "text": "Community slack link broken\n\n### Pandas version checks\n\n- [X] I have checked that the issue still exists on the latest versions of the docs on `main` [here](https://pandas.pydata.org/docs/dev/)\n\n\n### Location of the documentation\n\nhttps://pandas.pydata.org/docs/dev/development/community.html#community-slack\n\n### Documentation problem\n\nThe link for the community Slack is no longer active.\n\n### Suggested fix for documentation\n\nReplace with the updated link.",
+    "label": "docs"
+  },
+  {
+    "text": "DOC: Parameter verbose does not appear as deprecated\n\n### Pandas version checks\n\n- [X] I have checked that the issue still exists on the latest versions of the docs on `main` [here](https://pandas.pydata.org/docs/dev/)\n\n\n### Location of the documentation\n\nhttps://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html\nhttps://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_table.html\n\n### Documentation problem\n\nThe parameter \"verbose\" was deprecated in 2.2.0 but this fact does not appear in the corresponding docstrings. See:\n- #56556\n\n### Suggested fix for documentation\n\nThe \"deprecated\" Sphinx directive should be added to the docstring.",
+    "label": "docs"
+  },
+  {
+    "text": "DOC: `is_interval` is deprecated, but not in the docs\n\n### Pandas version checks\n\n- [X] I have checked that the issue still exists on the latest versions of the docs on `main` [here](https://pandas.pydata.org/docs/dev/)\n\n\n### Location of the documentation\n\nhttps://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.api.types.is_interval.html\n\n### Documentation problem\n\nThis page should show that `is_interval` is deprecated as of v2.2.\n\n\n### Suggested fix for documentation\n\nThis page should show that `is_interval` is deprecated as of v2.2.",
+    "label": "docs"
+  },
+  {
+    "text": "QST: need help\n\n### Research\n\n- [X] I have searched the [[pandas] tag](https://stackoverflow.com/questions/tagged/pandas) on StackOverflow for similar questions.\n\n- [X] I have asked my usage related question on [StackOverflow](https://stackoverflow.com).\n\n\n### Link to question on StackOverflow\n\nhttps://stackoverflow.com/questions/77704604/need-help-in-pandas-library\n\n### Question about pandas\n\nHi, I am new to opensource can anyone tell me how to run pandas after cloning it from github ?",
+    "label": "question"
+  },
+  {
+    "text": "QST: stack overflow\n\n### Research\n\n- [X] I have searched the [[pandas] tag](https://stackoverflow.com/questions/tagged/pandas) on StackOverflow for similar questions.\n\n- [X] I have asked my usage related question on [StackOverflow](https://stackoverflow.com).\n\n\n### Link to question on StackOverflow\n\nhttps://stackoverflow.com\n\n### Question about pandas\n\nimport pandas as pd\nurl='https://stackoverflow.com/'\ndf = pd.DataFrame({'A': ('62392411', 60273469), 'B': ('questions/', 'questions/')})\n>>> df\n          A           B\n0  62392411  questions/\n1  60273469  questions/",
+    "label": "question"
+  },
+  {
+    "text": "QST: Why does it seem like importing pandas spawns a process per logical core of your CPU?\n\n### Research\n\n- [X] I have searched the [[pandas] tag](https://stackoverflow.com/questions/tagged/pandas) on StackOverflow for similar questions.\n\n- [X] I have asked my usage related question on [StackOverflow](https://stackoverflow.com).\n\n\n### Link to question on StackOverflow\n\nhttps://stackoverflow.com/questions/77844856/why-does-importing-pandas-seemingly-spawn-a-process-tree-one-per-logical-core\n\n### Question about pandas\n\n```\nimport pandas as pd\n```\n\nThis applies on any version of pandas from 1.3.5 to 2.1.4.",
+    "label": "question"
+  },
+  {
+    "text": "This is an issue to collect feedback on the decision to make PyArrow a required dependency and to infer strings as PyArrow backed strings by default.QST:\n\n### Research\n\n- [X] I have searched the [[pandas] tag](https://stackoverflow.com/questions/tagged/pandas) on StackOverflow for similar questions.\n\n- [X] I have asked my usage related question on [StackOverflow](https://stackoverflow.com).\n\n\n### Link to question on StackOverflow\n\nn\n\n### Question about pandas\n\nna",
+    "label": "question"
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "classical": {
+    "accuracy": 0.96,
+    "macro_f1": 0.9641025641025641,
+    "per_class_f1": {
+      "bug": 0.9230769230769231,
+      "feature": 0.9333333333333333,
+      "docs": 1.0,
+      "question": 1.0
+    }
+  },
+  "bert_tiny": {
+    "accuracy": 1.0,
+    "macro_f1": 1.0,
+    "per_class_f1": {
+      "bug": 1.0,
+      "feature": 1.0,
+      "docs": 1.0,
+      "question": 1.0
+    }
+  },
+  "llm": null
+}
