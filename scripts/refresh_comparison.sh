@@ -8,6 +8,6 @@ if [ -z "${OPENAI_API_KEY:-}" ]; then
   exit 1
 fi
 
-python llm_baseline.py
+python scripts/training/llm_baseline.py
 python scripts/generate_model_comparison.py
 echo "Done. See reports/llm_metrics.json and reports/model_comparison.md"

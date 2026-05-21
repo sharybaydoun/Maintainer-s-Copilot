@@ -1,0 +1,42 @@
+# Runtime / API container dependencies — CPU-only inference stack
+
+# Web framework
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+pydantic==2.11.5
+
+# LLM client
+openai==1.82.0
+httpx==0.28.1
+
+# Inference stack
+transformers==4.52.4
+numpy==2.2.6
+# Pillow is a transitive dependency of `sentence-transformers` (CLIPModel
+# utilities import PIL even though we never use them). Pinning it here so
+# the slim runtime image has it.
+pillow==11.0.0
+
+# Retrieval
+faiss-cpu==1.11.0
+rank-bm25==0.2.2
+
+# Persistence / infra
+sqlalchemy==2.0.41
+alembic==1.16.1
+psycopg2-binary==2.9.10
+asyncpg==0.30.0
+pgvector==0.3.6
+redis==6.2.0
+minio==7.2.15
+scikit-learn==1.7.0
+
+# Auth
+fastapi-users[sqlalchemy]==14.0.1
+pyjwt==2.10.1
+
+# Observability (OpenTelemetry tracing)
+opentelemetry-api==1.30.0
+opentelemetry-sdk==1.30.0
+opentelemetry-exporter-otlp-proto-http==1.30.0
+opentelemetry-instrumentation-fastapi==0.51b0

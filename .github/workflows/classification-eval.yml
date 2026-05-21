@@ -1,4 +1,4 @@
-name: Classification Eval
+name: Eval + Tests
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main, master]
 
 jobs:
-  classification-eval:
+  unit-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,12 +16,137 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
+      - name: Install CPU-only torch
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-ml.txt
+          pip install --index-url https://download.pytorch.org/whl/cpu "torch>=2.0.0,<3.0.0"
+
+      - name: Install runtime + ML dependencies
+        run: pip install -r requirements-runtime.txt -r requirements-ml.txt
+
+      - name: Run redaction tests
+        run: python tests/test_redaction.py
+
+      - name: Run chatbot tool tests
+        run: python tests/test_chatbot_tools.py
+
+      - name: Run widget tests
+        run: python tests/test_widgets.py
+
+  eval:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install CPU-only torch
+        run: |
+          python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu "torch>=2.0.0,<3.0.0"
+
+      - name: Install runtime + ML dependencies
+        run: pip install -r requirements-runtime.txt -r requirements-ml.txt
 
       - name: Run classification golden eval
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python scripts/run_classification_eval.py
+
+      - name: Build RAG corpus
+        run: python scripts/build_rag_corpus.py
+
+      - name: Build RAG FAISS + BM25 index
+        run: python scripts/build_rag_index.py
+
+      - name: Run RAG retrieval eval (retrieval-only)
+        run: python scripts/run_rag_eval.py
+
+      - name: Run RAG eval with frozen-judge answer scoring
+        if: env.OPENAI_API_KEY != ''
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python scripts/run_rag_eval.py --with-answers
+
+      - name: Generate platform reports
+        run: python scripts/generate_platform_reports.py
+
+      - name: Download previous eval report (for regression diff)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: golden-eval-report
+          path: previous_report/
+
+      - name: Compare against previous eval report
+        run: |
+          if [ -f previous_report/golden_eval_report.json ]; then
+            python scripts/compare_eval_reports.py \
+              --current reports/golden_eval_report.json \
+              --previous previous_report/golden_eval_report.json
+          else
+            echo "No previous report on the artifact store; skipping regression diff."
+          fi
+
+      - name: Upload eval reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-eval-report
+          path: |
+            reports/golden_eval_report.json
+            reports/rag_eval_report.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  smoke:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install CPU-only torch
+        run: |
+          python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu "torch>=2.0.0,<3.0.0"
+
+      - name: Install runtime + ML dependencies
+        run: pip install -r requirements-runtime.txt -r requirements-ml.txt
+
+      - name: Boot API in the background
+        env:
+          AUTH_REQUIRED: "false"
+          OTEL_EXPORTER_OTLP_ENDPOINT: ""
+          SKIP_RAG_THRESHOLD_CHECK: "true"
+        run: |
+          uvicorn app.main:app --host 127.0.0.1 --port 8000 --log-level warning &
+          echo "API_PID=$!" >> $GITHUB_ENV
+          # Poll readiness
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/health/live > /dev/null; then
+              echo "API is live"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Run smoke tests
+        env:
+          API_BASE_URL: http://127.0.0.1:8000
+        run: python scripts/smoke_test.py
+
+      - name: Stop API
+        if: always()
+        run: |
+          if [ -n "$API_PID" ]; then
+            kill $API_PID || true
+          fi

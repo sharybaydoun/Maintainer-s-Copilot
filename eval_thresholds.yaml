@@ -1,3 +1,11 @@
 classification:
   macro_f1_min: 0.75
   accuracy_min: 0.85
+
+rag:
+  retrieval_accuracy_min: 0.75
+  hit_at_5_min: 0.80
+  mrr_at_10_min: 0.60
+  faithfulness_min: 0.70
+  answer_relevancy_min: 0.70
+  judge_agreement_min: 0.60

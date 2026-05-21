@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-05-19T20:12:43.027252+00:00",
+  "retrieval": {
+    "exit_code": 0,
+    "passed": 7,
+    "total": 7,
+    "accuracy": 1.0,
+    "stdout_tail": [
+      "RETRIEVAL PASS classical_metrics top_score=0.399 sources=['DECISIONS.md', 'reports/classical_metrics.json', 'models/bert_tiny_classifier/MODEL_CARD.md']",
+      "RETRIEVAL PASS golden_eval top_score=0.560 sources=['DECISIONS.md', 'reports/golden_eval_report.json', 'README.md']",
+      "RETRIEVAL PASS prediction_audit top_score=0.462 sources=['README.md', 'README.md', 'README.md']",
+      "",
+      "Retrieval accuracy: 7/7 (100%)"
+    ],
+    "stderr": "Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\n\nLoading weights:   0%|          | 0/103 [00:00<?, ?it/s]\nLoading weights: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 103/103 [00:00<00:00, 13911.68it/s]"
+  },
+  "classification_golden": {
+    "classical": {
+      "accuracy": 0.96,
+      "macro_f1": 0.9641025641025641,
+      "per_class_f1": {
+        "bug": 0.9230769230769231,
+        "feature": 0.9333333333333333,
+        "docs": 1.0,
+        "question": 1.0
+      }
+    },
+    "bert_tiny": {
+      "accuracy": 1.0,
+      "macro_f1": 1.0,
+      "per_class_f1": {
+        "bug": 1.0,
+        "feature": 1.0,
+        "docs": 1.0,
+        "question": 1.0
+      }
+    },
+    "llm": null
+  },
+  "thresholds_file": "/Users/apple/Desktop/Maintainer's Copilot/eval_thresholds.yaml"
+}

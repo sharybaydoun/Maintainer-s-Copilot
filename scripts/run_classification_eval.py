@@ -77,7 +77,7 @@ def predict_classical(
 
 
 def predict_bert(texts: list[str]) -> list[str]:
-    from app.infra.classifier import IssueClassifier
+    from app.ml.classifier import IssueClassifier
 
     classifier = IssueClassifier.load(MODEL_DIR)
     return [classifier.predict(text)[0] for text in texts]
@@ -136,31 +136,62 @@ def main() -> int:
     bert_metrics = compute_metrics(labels, bert_pred)
 
     api_key = os.environ.get("OPENAI_API_KEY")
+    llm_metrics: dict | None
+    llm_skipped_reason: str | None = None
     if not api_key:
         print("OPENAI_API_KEY not set — skipping LLM baseline eval", file=sys.stderr)
         llm_metrics = None
+        llm_skipped_reason = "OPENAI_API_KEY not set"
     else:
-        client = OpenAI(
-            api_key=os.environ["OPENAI_API_KEY"],
-            base_url="https://api.groq.com/openai/v1",
-        )
-        llm_pred = predict_llm(client, texts)
-        llm_metrics = compute_metrics(labels, llm_pred)
+        try:
+            client = OpenAI(
+                api_key=os.environ["OPENAI_API_KEY"],
+                base_url="https://api.groq.com/openai/v1",
+            )
+            llm_pred = predict_llm(client, texts)
+            llm_metrics = compute_metrics(labels, llm_pred)
+        except Exception as exc:  # network / quota / 5xx — never crash the run
+            print(f"LLM baseline failed ({exc}); marking skipped", file=sys.stderr)
+            llm_metrics = None
+            llm_skipped_reason = f"llm_call_failed: {exc}"
 
     all_passed = True
     all_passed &= check_thresholds("Logistic Regression", classical_metrics, thresholds)
     all_passed &= check_thresholds("BERT-tiny", bert_metrics, thresholds)
     if llm_metrics:
         all_passed &= check_thresholds("LLM baseline", llm_metrics, thresholds)
+    elif llm_skipped_reason:
+        print(f"  SKIP LLM baseline: {llm_skipped_reason}")
 
-    report = {
-        "classical": classical_metrics,
-        "bert_tiny": bert_metrics,
-        "llm": llm_metrics,
-    }
+    # Preserve any existing keys written by the RAG evaluator so the unified
+    # report retains rag / rag_thresholds / rag_failures across runs.
     report_path = ROOT / "reports" / "golden_eval_report.json"
+    existing: dict = {}
+    if report_path.is_file():
+        try:
+            existing = json.loads(report_path.read_text(encoding="utf-8"))
+            if not isinstance(existing, dict):
+                existing = {}
+        except json.JSONDecodeError:
+            existing = {}
+
+    if llm_metrics is not None:
+        llm_block: dict | None = llm_metrics
+    else:
+        llm_block = {
+            "status": "skipped",
+            "reason": llm_skipped_reason or "OPENAI_API_KEY not set",
+        }
+
+    existing.update(
+        {
+            "classical": classical_metrics,
+            "bert_tiny": bert_metrics,
+            "llm": llm_block,
+        }
+    )
     report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    report_path.write_text(json.dumps(existing, indent=2) + "\n", encoding="utf-8")
     print(f"\nWrote {report_path}")
 
     return 0 if all_passed else 1

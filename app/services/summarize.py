@@ -1,5 +1,5 @@
 from app.domain.summarize import SummarizeRequest, SummarizeResponse
-from app.infra.summarizer import IssueSummarizer
+from app.ml.summarizer import IssueSummarizer
 
 
 def summarize_issue(summarizer: IssueSummarizer, request: SummarizeRequest) -> SummarizeResponse:

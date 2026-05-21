@@ -9,4 +9,5 @@ router = APIRouter(tags=["predict"])
 @router.post("/predict", response_model=PredictResponse)
 def predict(body: PredictRequest, request: Request) -> PredictResponse:
     classifier = request.app.state.classifier
-    return predict_service.predict_issue(classifier, body)
+    request_id = getattr(request.state, "request_id", None)
+    return predict_service.predict_issue(classifier, body, request_id=request_id)

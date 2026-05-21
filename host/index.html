@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>Maintainer's Copilot — AI triage & RAG chatbot for open-source maintainers</title>
+    <meta
+      name="description"
+      content="Open-source AI platform that triages GitHub issues, answers questions over your project docs, and embeds anywhere via a single script tag."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #07090f;
+        --surface-1: #0d1220;
+        --surface-2: #131a2c;
+        --surface-3: #1a2238;
+        --border: rgba(148, 163, 184, 0.14);
+        --border-strong: rgba(148, 163, 184, 0.28);
+        --text: #e2e8f0;
+        --text-dim: #94a3b8;
+        --text-faint: #64748b;
+        --accent: #818cf8;
+        --accent-2: #22d3ee;
+        --accent-3: #f472b6;
+        --ok: #34d399;
+        --warn: #fbbf24;
+        --err: #f87171;
+        --gradient: linear-gradient(135deg, #818cf8 0%, #22d3ee 50%, #f472b6 100%);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        min-height: 100vh;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(circle at 12% 18%, rgba(129, 140, 248, 0.18), transparent 38%),
+          radial-gradient(circle at 88% 8%, rgba(34, 211, 238, 0.14), transparent 42%),
+          radial-gradient(circle at 50% 95%, rgba(244, 114, 182, 0.10), transparent 45%);
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+        transition: color 0.15s ease;
+      }
+      a:hover {
+        color: var(--accent-2);
+      }
+
+      code,
+      pre {
+        font-family: "JetBrains Mono", "Fira Code", monospace;
+      }
+
+      code {
+        background: var(--surface-2);
+        color: #cbd5e1;
+        padding: 0.15rem 0.45rem;
+        border-radius: 5px;
+        border: 1px solid var(--border);
+        font-size: 0.85em;
+      }
+
+      pre {
+        background: var(--surface-1);
+        border: 1px solid var(--border);
+        color: #e2e8f0;
+        padding: 1rem 1.1rem;
+        border-radius: 10px;
+        overflow-x: auto;
+        font-size: 0.85rem;
+        line-height: 1.55;
+        position: relative;
+      }
+
+      .container {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+      }
+
+      /* ---------- top nav ---------- */
+      nav {
+        position: sticky;
+        top: 0;
+        backdrop-filter: blur(14px);
+        background: rgba(7, 9, 15, 0.7);
+        border-bottom: 1px solid var(--border);
+        z-index: 20;
+      }
+      nav .container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 700;
+        font-size: 1.05rem;
+        letter-spacing: -0.01em;
+      }
+      .brand-dot {
+        width: 0.85rem;
+        height: 0.85rem;
+        border-radius: 4px;
+        background: var(--gradient);
+        box-shadow: 0 0 14px rgba(129, 140, 248, 0.6);
+      }
+      .nav-links {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.9rem;
+        color: var(--text-dim);
+      }
+      .nav-links a {
+        color: var(--text-dim);
+      }
+      .nav-links a:hover {
+        color: var(--text);
+      }
+      @media (max-width: 720px) {
+        .nav-links {
+          display: none;
+        }
+      }
+
+      /* ---------- hero ---------- */
+      .hero {
+        padding: 5rem 0 3rem;
+        text-align: center;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        background: var(--surface-2);
+        border: 1px solid var(--border-strong);
+        color: var(--text-dim);
+        font-size: 0.78rem;
+        font-weight: 500;
+        margin-bottom: 1.5rem;
+      }
+      .pill .pulse {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--ok);
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+        animation: pulse 1.8s ease-out infinite;
+      }
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+        }
+        100% {
+          box-shadow: 0 0 0 10px rgba(52, 211, 153, 0);
+        }
+      }
+      h1 {
+        font-size: clamp(2.4rem, 5.5vw, 4rem);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.05;
+        margin: 0 auto 1.25rem;
+        max-width: 22ch;
+      }
+      h1 .grad {
+        background: var(--gradient);
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+      .lede {
+        max-width: 38rem;
+        margin: 0 auto 2rem;
+        font-size: 1.15rem;
+        color: var(--text-dim);
+      }
+      .cta-row {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1.25rem;
+        border-radius: 10px;
+        font-size: 0.92rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.12s ease, box-shadow 0.12s ease,
+          background 0.15s ease;
+        border: 1px solid transparent;
+        text-decoration: none;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+      .btn-primary {
+        background: var(--gradient);
+        color: #0a0e1a;
+        box-shadow: 0 8px 24px rgba(129, 140, 248, 0.28);
+      }
+      .btn-primary:hover {
+        box-shadow: 0 12px 30px rgba(129, 140, 248, 0.4);
+      }
+      .btn-secondary {
+        background: var(--surface-2);
+        color: var(--text);
+        border-color: var(--border-strong);
+      }
+      .btn-secondary:hover {
+        background: var(--surface-3);
+        color: var(--text);
+      }
+
+      /* ---------- status strip ---------- */
+      .status-strip {
+        margin-top: 3rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.6rem;
+        max-width: 720px;
+        margin-inline: auto;
+      }
+      .status-pill {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.55rem 0.85rem;
+        background: var(--surface-1);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 0.82rem;
+        color: var(--text-dim);
+      }
+      .status-pill .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--text-faint);
+        flex-shrink: 0;
+      }
+      .status-pill.ok .dot {
+        background: var(--ok);
+        box-shadow: 0 0 8px rgba(52, 211, 153, 0.55);
+      }
+      .status-pill.warn .dot {
+        background: var(--warn);
+      }
+      .status-pill.err .dot {
+        background: var(--err);
+      }
+
+      /* ---------- sections ---------- */
+      section {
+        padding: 4rem 0;
+      }
+      .section-head {
+        text-align: center;
+        margin-bottom: 2.5rem;
+      }
+      .section-head .eyebrow {
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--accent-2);
+        margin-bottom: 0.75rem;
+      }
+      .section-head h2 {
+        font-size: clamp(1.75rem, 3.2vw, 2.3rem);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0 auto 0.75rem;
+        max-width: 24ch;
+      }
+      .section-head p {
+        color: var(--text-dim);
+        max-width: 38rem;
+        margin: 0 auto;
+      }
+
+      /* ---------- feature grid ---------- */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+      }
+      .card {
+        position: relative;
+        background: var(--surface-1);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.5rem;
+        transition: transform 0.15s ease, border-color 0.15s ease,
+          box-shadow 0.15s ease;
+        overflow: hidden;
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: var(--gradient);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        pointer-events: none;
+        mix-blend-mode: overlay;
+      }
+      .card:hover {
+        border-color: var(--border-strong);
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+      }
+      .card:hover::before {
+        opacity: 0.06;
+      }
+      .card .icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 9px;
+        background: var(--surface-3);
+        border: 1px solid var(--border-strong);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+      }
+      .card h3 {
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin: 0 0 0.5rem;
+        letter-spacing: -0.01em;
+      }
+      .card p {
+        font-size: 0.9rem;
+        color: var(--text-dim);
+        margin: 0;
+      }
+      .card .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-top: 0.85rem;
+      }
+      .tag {
+        font-size: 0.7rem;
+        font-weight: 500;
+        background: var(--surface-3);
+        color: var(--text-dim);
+        padding: 0.18rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+      }
+
+      /* ---------- architecture diagram ---------- */
+      .arch {
+        background: var(--surface-1);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 2rem;
+      }
+      .arch h3 {
+        margin: 0 0 0.4rem;
+        font-size: 1rem;
+        letter-spacing: -0.01em;
+        color: var(--text-dim);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-size: 0.75rem;
+      }
+      .arch-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        margin-top: 1rem;
+      }
+      .service {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        font-size: 0.85rem;
+        transition: border-color 0.15s ease;
+      }
+      .service:hover {
+        border-color: var(--border-strong);
+      }
+      .service .name {
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 0.2rem;
+      }
+      .service .role {
+        color: var(--text-faint);
+        font-size: 0.78rem;
+      }
+      .service .port {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--accent-2);
+        margin-top: 0.4rem;
+      }
+
+      /* ---------- chat flow ---------- */
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.75rem;
+        counter-reset: step;
+      }
+      .step {
+        background: var(--surface-1);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1.1rem 1.1rem 1.1rem 2.6rem;
+        position: relative;
+        font-size: 0.88rem;
+      }
+      .step::before {
+        counter-increment: step;
+        content: counter(step);
+        position: absolute;
+        left: 1rem;
+        top: 1rem;
+        width: 1.2rem;
+        height: 1.2rem;
+        border-radius: 50%;
+        background: var(--gradient);
+        color: #0a0e1a;
+        font-size: 0.72rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .step strong {
+        display: block;
+        margin-bottom: 0.2rem;
+        color: var(--text);
+        font-weight: 600;
+      }
+      .step span {
+        color: var(--text-dim);
+        font-size: 0.83rem;
+      }
+
+      /* ---------- demo section ---------- */
+      .demo-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      }
+      .demo-card {
+        background: var(--surface-1);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem 1.4rem;
+      }
+      .demo-card .num {
+        display: inline-flex;
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 5px;
+        background: var(--surface-3);
+        border: 1px solid var(--border-strong);
+        color: var(--accent-2);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.78rem;
+        font-weight: 600;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.6rem;
+      }
+      .demo-card h4 {
+        margin: 0 0 0.4rem;
+        font-size: 0.98rem;
+        letter-spacing: -0.01em;
+      }
+      .demo-card p {
+        margin: 0;
+        color: var(--text-dim);
+        font-size: 0.85rem;
+      }
+      .demo-card .links {
+        margin-top: 0.7rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .demo-card .links a {
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+      }
+      .demo-card .links a:hover {
+        color: var(--text);
+        border-color: var(--border-strong);
+      }
+
+      /* ---------- embed snippet ---------- */
+      .embed-card {
+        background: var(--surface-1);
+        border: 1px solid var(--border-strong);
+        border-radius: 14px;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+      }
+      .embed-card h3 {
+        margin: 0 0 0.6rem;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      .embed-card p {
+        color: var(--text-dim);
+        font-size: 0.88rem;
+        margin: 0 0 1rem;
+      }
+      .copy-btn {
+        position: absolute;
+        top: 0.6rem;
+        right: 0.6rem;
+        background: var(--surface-2);
+        color: var(--text-dim);
+        border: 1px solid var(--border-strong);
+        font-size: 0.7rem;
+        font-weight: 500;
+        padding: 0.3rem 0.65rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: color 0.15s ease, background 0.15s ease;
+      }
+      .copy-btn:hover {
+        color: var(--text);
+        background: var(--surface-3);
+      }
+      .copy-btn.copied {
+        color: var(--ok);
+        border-color: var(--ok);
+      }
+
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 2.5rem 0;
+        color: var(--text-faint);
+        font-size: 0.82rem;
+      }
+      footer .container {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+      footer a {
+        color: var(--text-dim);
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="container">
+        <div class="brand">
+          <span class="brand-dot" aria-hidden="true"></span>
+          Maintainer's Copilot
+        </div>
+        <div class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#flow">RAG flow</a>
+          <a href="#demo">Demo</a>
+          <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer">API</a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="container">
+        <span class="pill" id="hero-pill">
+          <span class="pulse"></span>
+          Probing stack&hellip;
+        </span>
+        <h1>
+          Triage. Search. Answer.<br />
+          <span class="grad">Embed anywhere.</span>
+        </h1>
+        <p class="lede">
+          An open-source AI platform for OSS maintainers. Classifies issues with
+          BERT-tiny, answers questions over your docs with hybrid RAG, and ships
+          as a single <code>&lt;script&gt;</code> tag you can drop into any
+          host page.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#demo">Try the live demo &rarr;</a>
+          <a
+            class="btn btn-secondary"
+            href="http://localhost:8000/docs"
+            target="_blank"
+            rel="noreferrer"
+            >Open API docs</a
+          >
+          <a
+            class="btn btn-secondary"
+            href="http://localhost:8501"
+            target="_blank"
+            rel="noreferrer"
+            >Streamlit UI</a
+          >
+        </div>
+
+        <div class="status-strip" id="status-strip" aria-live="polite">
+          <div class="status-pill" data-svc="api">
+            <span class="dot"></span><span>API</span>
+          </div>
+          <div class="status-pill" data-svc="classifier">
+            <span class="dot"></span><span>Classifier</span>
+          </div>
+          <div class="status-pill" data-svc="rag">
+            <span class="dot"></span><span>RAG</span>
+          </div>
+          <div class="status-pill" data-svc="chatbot">
+            <span class="dot"></span><span>Chatbot</span>
+          </div>
+          <div class="status-pill" data-svc="jaeger">
+            <span class="dot"></span><span>Jaeger</span>
+          </div>
+          <div class="status-pill" data-svc="minio">
+            <span class="dot"></span><span>MinIO</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section id="features">
+      <div class="container">
+        <div class="section-head">
+          <div class="eyebrow">What it does</div>
+          <h2>Six production primitives, one stack</h2>
+          <p>
+            Each capability is exposed as a typed FastAPI route with structured
+            error envelopes, distributed tracing, and gated thresholds in CI.
+          </p>
+        </div>
+
+        <div class="grid">
+          <article class="card">
+            <div class="icon">🏷️</div>
+            <h3>Issue classification</h3>
+            <p>
+              Three baselines (logistic regression, BERT-tiny, Groq Llama-3.1)
+              evaluated on the same 257-issue test split. The winner is
+              SHA-pinned and enforced at startup.
+            </p>
+            <div class="meta">
+              <span class="tag">POST /predict</span>
+              <span class="tag">macro F1</span>
+              <span class="tag">SHA-256 gate</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="icon">🔍</div>
+            <h3>Hybrid RAG</h3>
+            <p>
+              Dense (MiniLM-L6-v2) + BM25 with <code>alpha=0.65</code>, semantic
+              reranker, query rewriting, weak-retrieval refusal, and inline
+              <code>[source]</code> citations.
+            </p>
+            <div class="meta">
+              <span class="tag">FAISS</span>
+              <span class="tag">BM25</span>
+              <span class="tag">hit@5 / MRR@10</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="icon">🛠️</div>
+            <h3>Tool-calling chatbot</h3>
+            <p>
+              OpenAI-compatible function calling dispatched in-process: no HTTP
+              self-calls, one trace per turn, five tools, structured tool-failure
+              recovery.
+            </p>
+            <div class="meta">
+              <span class="tag">classify_issue</span>
+              <span class="tag">search_docs</span>
+              <span class="tag">write_memory</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="icon">🧠</div>
+            <h3>Memory</h3>
+            <p>
+              Redis for short-term per-session turns, pgvector(384) cosine for
+              long-term episodic notes scoped to one authenticated user.
+              Explicit writes only.
+            </p>
+            <div class="meta">
+              <span class="tag">Redis</span>
+              <span class="tag">pgvector</span>
+              <span class="tag">audit log</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="icon">🔌</div>
+            <h3>Embeddable widget</h3>
+            <p>
+              Dynamic <code>/widget.js</code> loader injects a sandboxed iframe.
+              CSP <code>frame-ancestors</code> is derived per-widget from the
+              <code>allowed_origins</code> allowlist.
+            </p>
+            <div class="meta">
+              <span class="tag">React + Vite</span>
+              <span class="tag">postMessage</span>
+              <span class="tag">CSP gated</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="icon">📡</div>
+            <h3>Observability</h3>
+            <p>
+              OpenTelemetry → Jaeger, 12 named spans, redaction layer scrubs
+              7 token patterns + 10 sensitive keys before logs, traces, or
+              persisted memory.
+            </p>
+            <div class="meta">
+              <span class="tag">OTLP/HTTP</span>
+              <span class="tag">JSON logs</span>
+              <span class="tag">trace_id ↔ logs</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <div class="container">
+        <div class="section-head">
+          <div class="eyebrow">How it's wired</div>
+          <h2>Nine containers, one <code>docker compose up</code></h2>
+          <p>
+            Layered architecture: <code>app/api</code> ▸ <code>app/services</code>
+            ▸ <code>app/repositories</code> ▸ <code>app/domain</code> ▸
+            <code>app/infra</code>. No HTTP self-calls.
+          </p>
+        </div>
+
+        <div class="arch">
+          <h3>Live services</h3>
+          <div class="arch-grid">
+            <div class="service">
+              <div class="name">api</div>
+              <div class="role">FastAPI + uvicorn</div>
+              <div class="port">:8000</div>
+            </div>
+            <div class="service">
+              <div class="name">chatbot</div>
+              <div class="role">Streamlit admin UI</div>
+              <div class="port">:8501</div>
+            </div>
+            <div class="service">
+              <div class="name">widget</div>
+              <div class="role">React + Vite SPA</div>
+              <div class="port">:5173</div>
+            </div>
+            <div class="service">
+              <div class="name">host</div>
+              <div class="role">This page (nginx)</div>
+              <div class="port">:8080</div>
+            </div>
+            <div class="service">
+              <div class="name">postgres</div>
+              <div class="role">pgvector + audit logs</div>
+              <div class="port">:5432</div>
+            </div>
+            <div class="service">
+              <div class="name">redis</div>
+              <div class="role">Short-term chat memory</div>
+              <div class="port">:6379</div>
+            </div>
+            <div class="service">
+              <div class="name">minio</div>
+              <div class="role">Eval-report artifacts</div>
+              <div class="port">:9001</div>
+            </div>
+            <div class="service">
+              <div class="name">jaeger</div>
+              <div class="role">Distributed traces</div>
+              <div class="port">:16686</div>
+            </div>
+            <div class="service">
+              <div class="name">vault</div>
+              <div class="role">Secret manager</div>
+              <div class="port">:8200</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="flow">
+      <div class="container">
+        <div class="section-head">
+          <div class="eyebrow">RAG + chatbot lifecycle</div>
+          <h2>What happens when you ask a question</h2>
+          <p>
+            One <code>POST /chat</code> turn fans out into a multi-span trace you
+            can open in Jaeger. Every step is gated, redacted, and logged.
+          </p>
+        </div>
+
+        <div class="flow">
+          <div class="step">
+            <strong>Safety check</strong>
+            <span>Prompt-injection filter rejects unsafe queries.</span>
+          </div>
+          <div class="step">
+            <strong>Tool routing</strong>
+            <span>LLM picks one of 5 in-process tools.</span>
+          </div>
+          <div class="step">
+            <strong>Hybrid retrieve</strong>
+            <span>Dense + BM25, alpha=0.65, top-10.</span>
+          </div>
+          <div class="step">
+            <strong>Rerank</strong>
+            <span>Semantic reranker keeps top-5.</span>
+          </div>
+          <div class="step">
+            <strong>Grounded answer</strong>
+            <span>LLM cites <code>[source]</code> tokens only.</span>
+          </div>
+          <div class="step">
+            <strong>Redact + persist</strong>
+            <span>Memory + audit row written atomically.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="demo">
+      <div class="container">
+        <div class="section-head">
+          <div class="eyebrow">Open this in a browser</div>
+          <h2>Five surfaces, five tabs</h2>
+          <p>
+            Each runs locally on this machine. Click through them in order to
+            walk a reviewer from raw API to user-facing UI to observability.
+          </p>
+        </div>
+
+        <div class="demo-grid">
+          <div class="demo-card">
+            <span class="num">1</span>
+            <h4>This host page</h4>
+            <p>
+              You're looking at it. The chat bubble bottom-right is loaded by
+              <code>/widget.js</code> with no query params required.
+            </p>
+            <div class="links">
+              <a href="http://localhost:8080" target="_blank">localhost:8080</a>
+            </div>
+          </div>
+          <div class="demo-card">
+            <span class="num">2</span>
+            <h4>FastAPI Swagger</h4>
+            <p>
+              Every route documented: <code>/predict</code>,
+              <code>/rag/query</code>, <code>/chat</code>,
+              <code>/widgets/*</code>, <code>/auth/jwt/login</code>.
+            </p>
+            <div class="links">
+              <a href="http://localhost:8000/docs" target="_blank"
+                >localhost:8000/docs</a
+              >
+            </div>
+          </div>
+          <div class="demo-card">
+            <span class="num">3</span>
+            <h4>Streamlit admin</h4>
+            <p>
+              Login as admin, browse <em>Chat</em>, <em>Admin</em>,
+              <em>Widgets</em>, and <em>Memory</em> pages backed by the same
+              FastAPI routes.
+            </p>
+            <div class="links">
+              <a href="http://localhost:8501" target="_blank">localhost:8501</a>
+            </div>
+          </div>
+          <div class="demo-card">
+            <span class="num">4</span>
+            <h4>Jaeger traces</h4>
+            <p>
+              Pick service <code>maintainers-copilot-api</code> → see
+              <code>chatbot.run</code> fanning out to RAG, tool dispatch, LLM
+              calls.
+            </p>
+            <div class="links">
+              <a href="http://localhost:16686" target="_blank">localhost:16686</a>
+            </div>
+          </div>
+          <div class="demo-card">
+            <span class="num">5</span>
+            <h4>MinIO console</h4>
+            <p>
+              Eval reports get uploaded to the <code>copilot</code> bucket on
+              boot when <code>MINIO_UPLOAD_REPORTS=true</code>.
+            </p>
+            <div class="links">
+              <a href="http://localhost:9001" target="_blank">localhost:9001</a>
+            </div>
+          </div>
+          <div class="demo-card">
+            <span class="num">6</span>
+            <h4>Vault dev UI</h4>
+            <p>
+              Inspect the seeded secrets at <code>secret/data/copilot</code>.
+              Token from <code>VAULT_DEV_ROOT_TOKEN_ID</code>.
+            </p>
+            <div class="links">
+              <a href="http://localhost:8200" target="_blank">localhost:8200</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="embed-card">
+          <h3>Embed this widget anywhere</h3>
+          <p>
+            Drop a single <code>&lt;script&gt;</code> tag onto any page whose
+            origin is in the widget's <code>allowed_origins</code> list. The
+            loader handles the iframe + the resize handshake.
+          </p>
+          <pre><button type="button" class="copy-btn" id="copy-snippet">Copy</button><code id="snippet">&lt;script src=&quot;http://localhost:8000/widget.js&quot; data-widget-id=&quot;00000000-0000-0000-0000-000000000000&quot;&gt;&lt;/script&gt;</code></pre>
+          <p style="margin-top: 0.85rem">
+            Active widget: <code id="widget-id">00000000-0000-0000-0000-000000000000</code>
+            &middot; API: <code id="api-url">http://localhost:8000</code>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="container">
+        <div>
+          Maintainer's Copilot &middot; Week 7 submission &middot; built with
+          FastAPI, Postgres + pgvector, Redis, OpenTelemetry, React,
+          Streamlit, MinIO, Vault.
+        </div>
+        <div>
+          <a href="http://localhost:8000/health/ready" target="_blank">
+            /health/ready
+          </a>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // ------------------------------------------------------------------
+      // Resolve widget id + api url. The host Dockerfile is intentionally
+      // minimal — we don't sed-replace, we just default safely.
+      // ?widget=<uuid>&api=<url> still wins.
+      // ------------------------------------------------------------------
+      (function () {
+        var DEFAULT_WIDGET_ID = "00000000-0000-0000-0000-000000000000";
+        var DEFAULT_API_URL = "http://localhost:8000";
+
+        var stampedWidget = "__WIDGET_ID__";
+        var stampedApi = "__API_URL__";
+        function looksUnsubstituted(value) {
+          return typeof value !== "string" || value.indexOf("__") === 0;
+        }
+
+        var params = new URLSearchParams(window.location.search);
+        var widgetId =
+          params.get("widget") ||
+          (looksUnsubstituted(stampedWidget) ? DEFAULT_WIDGET_ID : stampedWidget);
+        var apiUrl = (
+          params.get("api") ||
+          (looksUnsubstituted(stampedApi) ? DEFAULT_API_URL : stampedApi)
+        ).replace(/\/$/, "");
+
+        document.getElementById("widget-id").textContent = widgetId;
+        document.getElementById("api-url").textContent = apiUrl;
+        document.getElementById("snippet").textContent =
+          '<script src="' +
+          apiUrl +
+          '/widget.js" data-widget-id="' +
+          widgetId +
+          '"></scr' +
+          'ipt>';
+
+        var s = document.createElement("script");
+        s.src = apiUrl + "/widget.js";
+        s.setAttribute("data-widget-id", widgetId);
+        document.body.appendChild(s);
+
+        // Copy button
+        var copyBtn = document.getElementById("copy-snippet");
+        copyBtn.addEventListener("click", function () {
+          var text = document.getElementById("snippet").textContent;
+          navigator.clipboard
+            .writeText(text)
+            .then(function () {
+              copyBtn.textContent = "Copied!";
+              copyBtn.classList.add("copied");
+              setTimeout(function () {
+                copyBtn.textContent = "Copy";
+                copyBtn.classList.remove("copied");
+              }, 1600);
+            })
+            .catch(function () {
+              copyBtn.textContent = "Copy failed";
+            });
+        });
+
+        // ------------------------------------------------------------
+        // Probe the API and flip the status pills (and the hero pill).
+        // ------------------------------------------------------------
+        var heroPill = document.getElementById("hero-pill");
+        var strip = document.getElementById("status-strip");
+
+        function setPill(svc, state, label) {
+          var el = strip.querySelector('[data-svc="' + svc + '"]');
+          if (!el) return;
+          el.classList.remove("ok", "warn", "err");
+          if (state) el.classList.add(state);
+          if (label) {
+            var span = el.querySelector("span:last-child");
+            if (span) span.textContent = label;
+          }
+        }
+
+        fetch(apiUrl + "/health/ready", { cache: "no-store" })
+          .then(function (r) {
+            return r.json().then(function (body) {
+              return { ok: r.ok, body: body, status: r.status };
+            });
+          })
+          .then(function (res) {
+            var components = (res.body && res.body.components) || {};
+            setPill("api", res.ok ? "ok" : "warn", "API");
+            setPill(
+              "classifier",
+              components.classifier ? "ok" : "err",
+              components.classifier ? "Classifier" : "Classifier down"
+            );
+            setPill(
+              "rag",
+              components.rag ? "ok" : "warn",
+              components.rag ? "RAG" : "RAG offline"
+            );
+            setPill(
+              "chatbot",
+              components.chatbot ? "ok" : "warn",
+              components.chatbot ? "Chatbot" : "Chatbot offline"
+            );
+            if (res.ok) {
+              heroPill.innerHTML =
+                '<span class="pulse"></span> All systems operational';
+            } else {
+              heroPill.innerHTML =
+                '<span class="pulse" style="background:#fbbf24"></span> Partial readiness';
+            }
+          })
+          .catch(function () {
+            setPill("api", "err", "API offline");
+            heroPill.innerHTML =
+              '<span class="pulse" style="background:#f87171"></span> API not reachable';
+          });
+
+        // Jaeger
+        fetch("http://localhost:16686/api/services", { cache: "no-store" })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (data) {
+            var ok =
+              data &&
+              Array.isArray(data.data) &&
+              data.data.indexOf("maintainers-copilot-api") !== -1;
+            setPill("jaeger", ok ? "ok" : "warn", ok ? "Jaeger" : "Jaeger empty");
+          })
+          .catch(function () {
+            setPill("jaeger", "err", "Jaeger offline");
+          });
+
+        // MinIO
+        fetch("http://localhost:9000/minio/health/live", { cache: "no-store" })
+          .then(function (r) {
+            setPill("minio", r.ok ? "ok" : "warn", r.ok ? "MinIO" : "MinIO degraded");
+          })
+          .catch(function () {
+            setPill("minio", "err", "MinIO offline");
+          });
+      })();
+    </script>
+  </body>
+</html>

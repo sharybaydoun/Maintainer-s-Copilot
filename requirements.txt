@@ -1,8 +1,9 @@
-fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
-pydantic>=2.0.0
-torch>=2.0.0
-transformers>=4.44.0
-openai>=1.40.0
-pyyaml>=6.0.0
-scikit-learn>=1.5.0
+# Legacy alias kept for backward compatibility.
+# Prefer:
+#   - requirements-runtime.txt  (API container, CPU inference)
+#   - requirements-ml.txt       (training + evals)
+#
+# Note: this file does NOT pre-install CPU torch. For Linux deployments use
+# the Dockerfile (which pins the CPU wheel index) instead of this file.
+-r requirements-runtime.txt
+-r requirements-ml.txt

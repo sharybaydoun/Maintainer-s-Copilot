@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-05-20T19:44:00+00:00",
+  "golden_set": "evals/rag_golden.json",
+  "n_cases": 25,
+  "alpha_sweep": [
+    {"alpha": 0.0, "reranker": "semantic", "hit_at_5": 1.0, "mrr_at_10": 0.98},
+    {"alpha": 0.3, "reranker": "semantic", "hit_at_5": 1.0, "mrr_at_10": 0.98},
+    {"alpha": 0.5, "reranker": "semantic", "hit_at_5": 1.0, "mrr_at_10": 0.98},
+    {"alpha": 0.65, "reranker": "semantic", "hit_at_5": 1.0, "mrr_at_10": 0.98},
+    {"alpha": 0.8, "reranker": "semantic", "hit_at_5": 1.0, "mrr_at_10": 0.98},
+    {"alpha": 1.0, "reranker": "semantic", "hit_at_5": 1.0, "mrr_at_10": 0.98}
+  ],
+  "reranker_sweep": [
+    {"alpha": 0.65, "reranker": "off",      "hit_at_5": 1.0, "mrr_at_10": 0.96},
+    {"alpha": 0.65, "reranker": "semantic", "hit_at_5": 1.0, "mrr_at_10": 0.98}
+  ],
+  "notes": [
+    "Hit@5 saturates at 1.0 across the alpha sweep on the current 25-case golden set; the index is small enough that BM25, dense, and any hybrid all surface an acceptable source within top-5.",
+    "Semantic rerank lifts MRR@10 from 0.96 -> 0.98 at the default alpha, so rerank is left ON by default.",
+    "Default alpha=0.65 (dense-leaning with lexical tie-break) is kept as the production-shaped value; the choice does not move the metric on this corpus, so it is governed by behaviour-as-corpus-grows rather than measured uplift today."
+  ]
+}

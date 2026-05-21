@@ -1,0 +1,356 @@
+[
+  {
+    "chunk_id": "006abe7c84f6c728",
+    "source": "README.md",
+    "text": "FastAPI backend for classifying GitHub issues with a fine-tuned BERT-tiny model.",
+    "section": "Maintainer's Copilot"
+  },
+  {
+    "chunk_id": "1867461f85dc46ae",
+    "source": "README.md",
+    "text": "1. Configure environment (`.env` from `.env.example`).\n2. Optionally seed Vault dev secrets: `python scripts/seed_vault.py`.\n3. Run database migrations: `alembic upgrade head`.\n4. Start API: `uvicorn app.main:app --reload`.\n\nOn startup the API will:\n\n- Load JSON structured logs.\n- Read secrets from Vault when `VAULT_ADDR` + `VAULT_TOKEN` are set (falls back to `.env` if Vault is unavailable unless `VAULT_REQUIRED=true`).\n- Validate required artifacts (model weights, model card, eval thresholds, transformer metrics).\n- Load the BERT-tiny classifier.\n- Optionally upload `reports/*.json` and `reports/*.md` to MinIO when `MINIO_UPLOAD_REPORTS=true`.",
+    "section": "Startup flow"
+  },
+  {
+    "chunk_id": "894a18080a76b11a",
+    "source": "README.md",
+    "text": "```bash\npython3 -m venv .venv\nsource .venv/bin/activate",
+    "section": "Run locally"
+  },
+  {
+    "chunk_id": "fc22ef83236cf53a",
+    "source": "README.md",
+    "text": "pip install --index-url https://download.pytorch.org/whl/cpu \"torch>=2.0.0,<3.0.0\"\npip install -r requirements-runtime.txt\ncp .env.example .env",
+    "section": "CPU-only torch (skip the CUDA wheels — works on Apple Silicon and Linux x86_64)"
+  },
+  {
+    "chunk_id": "ac5346455ea09461",
+    "source": "README.md",
+    "text": "docker compose up -d postgres redis minio vault\npython scripts/seed_vault.py   # optional: populate Vault dev KV\nalembic upgrade head\n\nuvicorn app.main:app --reload\n```",
+    "section": "edit .env (OPENAI_API_KEY, DATABASE_URL, etc.)"
+  },
+  {
+    "chunk_id": "df956d0005a03992",
+    "source": "README.md",
+    "text": "```bash",
+    "section": "Database migrations"
+  },
+  {
+    "chunk_id": "291d7446310b5641",
+    "source": "README.md",
+    "text": "alembic upgrade head",
+    "section": "Apply migrations"
+  },
+  {
+    "chunk_id": "8b2544dbecfe05b1",
+    "source": "README.md",
+    "text": "alembic revision -m \"describe change\"",
+    "section": "Create a new migration after model changes"
+  },
+  {
+    "chunk_id": "b85620d5ebd14e84",
+    "source": "README.md",
+    "text": "alembic downgrade -1\n```\n\n`prediction_logs` stores audit rows for `/predict` calls when `DATABASE_URL` is configured.",
+    "section": "Roll back one revision"
+  },
+  {
+    "chunk_id": "8ac9e7d42abb688a",
+    "source": "README.md",
+    "text": "Vault KV v2 path defaults to `secret/copilot`. Keys:\n\n| Vault key | Environment variable |\n|-----------|---------------------|\n| `openai_api_key` | `OPENAI_API_KEY` |\n| `database_url` | `DATABASE_URL` |\n| `minio_access_key` | `MINIO_ACCESS_KEY` |\n| `minio_secret_key` | `MINIO_SECRET_KEY` |\n| `minio_bucket` | `MINIO_BUCKET` |\n| `minio_endpoint` | `MINIO_ENDPOINT` |\n\n```bash\nexport VAULT_ADDR=http://127.0.0.1:8200\nexport VAULT_TOKEN=dev-root-token\npython scripts/seed_vault.py\nexport VAULT_ADDR=http://127.0.0.1:8200 VAULT_TOKEN=dev-root-token\nuvicorn app.main:app --reload\n```\n\nSet `VAULT_REQUIRED=true` to fail startup when Vault is unreachable.",
+    "section": "Vault (development)"
+  },
+  {
+    "chunk_id": "83241379c9c374c8",
+    "source": "README.md",
+    "text": "```bash\nexport MINIO_UPLOAD_REPORTS=true\nexport MINIO_ENDPOINT=localhost:9000\nexport MINIO_ACCESS_KEY=minioadmin\nexport MINIO_SECRET_KEY=minioadmin\nexport MINIO_BUCKET=copilot\nuvicorn app.main:app --reload\n```",
+    "section": "MinIO artifacts"
+  },
+  {
+    "chunk_id": "30e60ee9ee66c6af",
+    "source": "README.md",
+    "text": "```bash\ncurl http://127.0.0.1:8000/health\n```",
+    "section": "Health"
+  },
+  {
+    "chunk_id": "ed58dd6e2cb941cc",
+    "source": "README.md",
+    "text": "```bash\ncurl -X POST http://127.0.0.1:8000/predict \\\n  -H \"Content-Type: application/json\" \\\n  -H \"X-Request-ID: demo-123\" \\\n  -d '{\"text\": \"Documentation typo in README\"}'\n```\n\nLogs include `request_id`, `label`, `confidence`, and `duration_ms`.",
+    "section": "Predict"
+  },
+  {
+    "chunk_id": "fbd032132798c96b",
+    "source": "README.md",
+    "text": "```bash\ncurl -X POST http://127.0.0.1:8000/ner \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"text\": \"Error in read_csv for data/file.py\"}'\n```",
+    "section": "NER (regex/integration)"
+  },
+  {
+    "chunk_id": "fe70631d1301a9ad",
+    "source": "README.md",
+    "text": "```bash\ncurl -X POST http://127.0.0.1:8000/summarize \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"text\": \"User reports crash in groupby after upgrade.\"}'\n```",
+    "section": "Summarize (requires `OPENAI_API_KEY`)"
+  },
+  {
+    "chunk_id": "5469d31dcf90dbd7",
+    "source": "README.md",
+    "text": "Build corpus and hybrid index (FAISS dense + BM25 lexical):\n\n```bash\npython scripts/build_rag_corpus.py\npython scripts/build_rag_index.py\n```\n\nOptional strict startup (`RAG_REQUIRED=true` refuses boot without index + chunks):\n\n```bash\nexport RAG_REQUIRED=true\nuvicorn app.main:app --reload\n```\n\nQuery (hybrid retrieve → rerank → grounded Groq answer):\n\n```bash\ncurl -X POST http://127.0.0.1:8000/rag/query \\\n  -H \"Content-Type: application/json\" \\\n  -H \"X-Request-ID: rag-demo-1\" \\\n  -d '{\"query\": \"How does the classifier startup validation work?\"}'\n```\n\nEval:\n\n```bash\npython scripts/run_rag_eval.py                    # retrieval only (CI)\npython scripts/run_rag_eval.py --with-answers     # + answer grounding (needs API key)\n```\n\nInteractive API docs: http://127.0.0.1:8000/docs",
+    "section": "RAG (requires corpus index + `OPENAI_API_KEY`)"
+  },
+  {
+    "chunk_id": "b7168e2ff3327553",
+    "source": "README.md",
+    "text": "```bash\npython scripts/run_classification_eval.py\nexport OPENAI_API_KEY=your-groq-key\nbash scripts/refresh_comparison.sh\n```",
+    "section": "Evaluation"
+  },
+  {
+    "chunk_id": "6ef0b0a3156d9a18",
+    "source": "README.md",
+    "text": "```bash\npip install --index-url https://download.pytorch.org/whl/cpu \"torch>=2.0.0,<3.0.0\"\npip install -r requirements-runtime.txt -r requirements-ml.txt\npython scripts/run_classification_eval.py\npython scripts/build_rag_corpus.py\npython scripts/build_rag_index.py\npython scripts/run_rag_eval.py\n```",
+    "section": "Test CI eval locally"
+  },
+  {
+    "chunk_id": "9b82c2c7fc5ed8ac",
+    "source": "README.md",
+    "text": "```bash\ncp .env.example .env\ndocker compose up --build\n```\n\nThe `migrate` service runs `alembic upgrade head` before the API starts.",
+    "section": "Docker"
+  },
+  {
+    "chunk_id": "f8eb8c8cbd5297b8",
+    "source": "README.md",
+    "text": "| Feature | How to test |\n|---------|-------------|\n| Startup validation | Rename `eval_thresholds.yaml` and start API — should fail with clear error |\n| Vault secrets | `docker compose up -d vault`, `python scripts/seed_vault.py`, unset `OPENAI_API_KEY` from shell, set `VAULT_*`, start API |\n| Structured logs | `curl /predict` and inspect JSON log lines on stdout |\n| Request ID | `curl -H \"X-Request-ID: test-1\" ...` — response header echoes ID |\n| Alembic | `alembic upgrade head`, then `\\d prediction_logs` in psql after a predict call |\n| MinIO upload | `MINIO_UPLOAD_REPORTS=true` + MinIO running, restart API, check bucket `copilot/reports/` |\n| RAG corpus | `python scripts/build_rag_corpus.py` — inspect `rag_chunks/chunks.json` |\n| RAG index | `python scripts/build_rag_index.py` — create",
+    "section": "Testing new features"
+  },
+  {
+    "chunk_id": "ac3eeaa54aa2c1c5",
+    "source": "README.md",
+    "text": "pts/build_rag_corpus.py` — inspect `rag_chunks/chunks.json` |\n| RAG index | `python scripts/build_rag_index.py` — creates `rag_index/faiss.index` |\n| RAG endpoint | `curl -X POST /rag/query` after index + API key configured |\n| RAG eval | `python scripts/run_rag_eval.py` |\n| RAG answer eval | `python scripts/run_rag_eval.py --with-answers` |\n| RAG required boot | `RAG_REQUIRED=true` + missing index → startup error |",
+    "section": "Testing new features"
+  },
+  {
+    "chunk_id": "3043af6ba9b959bf",
+    "source": "README.md",
+    "text": "See **[ARCH.md](ARCH.md)** for diagrams, startup lifecycle, and failure modes.\n\n1. **Corpus** — chunk docs with metadata (`chunk_id`, `source`, `section`, `text`).\n2. **Index** — FAISS dense vectors + BM25 lexical index over the same chunks.\n3. **Hybrid retrieval** — `score = α·dense + (1-α)·BM25` (`RAG_HYBRID_ALPHA`, default `0.65`).\n4. **Rerank** — retrieve 10, semantic-rerank to 5 (`RAG_RERANKER_MODE=semantic` or `cross_encoder`).\n5. **Grounded generation** — strict prompt; answers must end with `Sources: ...`; refusals include reformulation hints.\n6. **Observability** — JSON logs: `rag_retrieval`, `rag_query` with score and latency breakdown.\n7. **Eval** — golden retrieval in CI; optional `--with-answers` for keyword/citation/hallucination checks.\n\nKey env vars: `RAG_REQUIRED`, `RAG_HY",
+    "section": "RAG architecture (production-oriented)"
+  },
+  {
+    "chunk_id": "966df51ea8e47233",
+    "source": "README.md",
+    "text": "ieval in CI; optional `--with-answers` for keyword/citation/hallucination checks.\n\nKey env vars: `RAG_REQUIRED`, `RAG_HYBRID_ALPHA`, `RAG_RETRIEVAL_TOP_K`, `RAG_TOP_K`, `RAG_MIN_RETRIEVAL_SCORE`, `RAG_RERANK_ENABLED`, `VECTOR_STORE_BACKEND`.",
+    "section": "RAG architecture (production-oriented)"
+  },
+  {
+    "chunk_id": "7efb0ab5798f9f2e",
+    "source": "README.md",
+    "text": "| Doc | Purpose |\n|-----|---------|\n| [ARCH.md](ARCH.md) | Architecture diagrams and pipelines |\n| [RUNBOOK.md](RUNBOOK.md) | Operations, CI, Docker, troubleshooting |\n| [SECURITY.md](SECURITY.md) | Secrets, injection defense, refusals |\n| [EVALS.md](EVALS.md) | Evaluation methodology and thresholds |",
+    "section": "Platform docs"
+  },
+  {
+    "chunk_id": "0957fa2faee9d6df",
+    "source": "README.md",
+    "text": "| Path | Role | URL (local) |\n|------|------|-------------|\n| `app/` | FastAPI API only | http://127.0.0.1:8000 |\n| `chatbot/` | Streamlit admin + chat | http://127.0.0.1:8501 |\n| `widget/` | React/Vite embeddable widget | http://127.0.0.1:5173 |\n| `host/` | Demo page embedding widget | http://127.0.0.1:8080 |\n\n```bash",
+    "section": "Frontend (Week 7 layout)"
+  },
+  {
+    "chunk_id": "e1a8e70b6645e978",
+    "source": "README.md",
+    "text": "uvicorn app.main:app --reload",
+    "section": "API"
+  },
+  {
+    "chunk_id": "3e866f50d8387a51",
+    "source": "README.md",
+    "text": "pip install -r chatbot/requirements.txt\nAPI_URL=http://127.0.0.1:8000 streamlit run chatbot/app.py",
+    "section": "Streamlit (separate terminal)"
+  },
+  {
+    "chunk_id": "904dd19553a5237e",
+    "source": "README.md",
+    "text": "cd widget && npm install && npm run dev",
+    "section": "Widget dev"
+  },
+  {
+    "chunk_id": "3e8e9d66d208df3c",
+    "source": "README.md",
+    "text": "docker compose up --build\n```",
+    "section": "Full stack"
+  },
+  {
+    "chunk_id": "b06a4770112b2028",
+    "source": "README.md",
+    "text": "```bash\ncurl http://127.0.0.1:8000/admin/health/full\ncurl http://127.0.0.1:8000/admin/rag/stats\ncurl http://127.0.0.1:8000/admin/evals/latest\n```",
+    "section": "Admin endpoints"
+  },
+  {
+    "chunk_id": "31738c8c0387649a",
+    "source": "README.md",
+    "text": "```bash\ncurl -X POST http://127.0.0.1:8000/rag/query \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"query\": \"What about Vault?\", \"session_id\": \"demo-session-1\"}'\n```\n\nRequires `REDIS_URL` for persistent memory across restarts (in-memory fallback otherwise).\n\nSee `DECISIONS.md` and `models/bert_tiny_classifier/MODEL_CARD.md`.",
+    "section": "Conversational RAG"
+  },
+  {
+    "chunk_id": "542a78f4798f9632",
+    "source": "DECISIONS.md",
+    "text": "**pandas-dev/pandas** — high-volume, well-labeled GitHub issues with clear maintainer taxonomy. Issues are text-rich (reproduction steps, tracebacks, API discussion) and representative of real maintainer triage work.",
+    "section": "Chosen repository"
+  },
+  {
+    "chunk_id": "82ad0476b258c817",
+    "source": "DECISIONS.md",
+    "text": "Raw GitHub labels are mapped to four classes:\n\n| Class | Source label keywords (substring match) |\n|-------|----------------------------------------|\n| bug | bug, regression, error |\n| feature | enhancement, feature |\n| docs | doc, documentation |\n| question | question, usage, support, help, api usage, howto, how-to, clarification, needs info, discussion |\n\nPriority order when multiple labels match: **bug → feature → docs → question**. Issues with no mapped label are dropped during preprocessing.",
+    "section": "Label mapping strategy"
+  },
+  {
+    "chunk_id": "a59b42052112bb21",
+    "source": "DECISIONS.md",
+    "text": "Pandas rarely uses a single literal `question` label. Maintainer intent appears as **Usage Question**, **Needs Discussion**, **Needs Info**, and similar variants. Substring heuristics improved recall for the minority class while keeping the mapping auditable in code (`scripts/preprocess_issues.py`).",
+    "section": "Why question labels required heuristic mapping"
+  },
+  {
+    "chunk_id": "9982d550d17084ba",
+    "source": "DECISIONS.md",
+    "text": "- Strong, fast baseline for short-to-medium text classification.\n- Trains in seconds on CPU, no GPU dependency.\n- Interpretable and cheap at inference — useful as the deployment floor for latency/cost comparisons.\n- Same temporal splits as neural and LLM baselines for fair comparison.",
+    "section": "Why TF-IDF + Logistic Regression baseline"
+  },
+  {
+    "chunk_id": "9ed08d7abb181b9c",
+    "source": "DECISIONS.md",
+    "text": "- **prajjwal1/bert-tiny** (~4M parameters) fine-tunes quickly on laptop CPU.\n- Avoids large downloads and long training runs required by DistilBERT/base models in local/docker-compose environments.\n- Still captures semantic signal beyond bag-of-ngrams for issue text.\n- Saved artifact: `models/bert_tiny_classifier/`.",
+    "section": "Why BERT-tiny"
+  },
+  {
+    "chunk_id": "63106815075f63b7",
+    "source": "DECISIONS.md",
+    "text": "**Ship: fine-tuned BERT-tiny via `POST /predict`**\n\n| Model | Test accuracy | Test macro F1 | Latency (ms) | Est. cost (257 test issues) |\n|-------|--------------:|--------------:|-------------:|----------------------------:|\n| Logistic Regression | **0.907** | **0.816** | ~0.6 | $0 |\n| BERT-tiny (deployed) | 0.887 | 0.781 | ~7 | $0 (local CPU) |\n| LLM baseline (Groq `llama-3.1-8b-instant`) | see `reports/llm_metrics.json` | see `reports/llm_metrics.json` | see `reports/llm_metrics.json` | non-zero API cost |\n\n**Why BERT-tiny over logistic regression despite slightly lower test macro F1**\n\n- Still strong on the majority classes (bug/docs) with acceptable latency (~7 ms) and **zero per-request API cost**.\n- Fixed artifact (`models/bert_tiny_classifier/`) with a versioned **model card** and",
+    "section": "Deployment choice (classification)"
+  },
+  {
+    "chunk_id": "df0ab03175c6eb2e",
+    "source": "DECISIONS.md",
+    "text": "nd **zero per-request API cost**.\n- Fixed artifact (`models/bert_tiny_classifier/`) with a versioned **model card** and SHA-256 for boot-time integrity checks (see `MODEL_CARD.md`).\n- Semantic encoding of issue text beyond bag-of-ngrams; better foundation for later tool-calling chatbot integration than TF-IDF.\n\n**Why not the LLM baseline for production classification**\n\n- Higher latency and ongoing cost per issue (Groq API), unsuitable as the default triage path at pandas issue volume.\n- Reserved for **comparison**, golden eval, and **`/summarize`** (generative tasks), not primary `POST /predict`.\n\nFull three-way numbers: `reports/model_comparison.md`.\n\nNER uses regex/integration-only extraction (no trainable NER model yet). Summarization uses the Groq OpenAI-compatible client when `OPENAI",
+    "section": "Deployment choice (classification)"
+  },
+  {
+    "chunk_id": "e0b8a3a07bb26d90",
+    "source": "DECISIONS.md",
+    "text": "egration-only extraction (no trainable NER model yet). Summarization uses the Groq OpenAI-compatible client when `OPENAI_API_KEY` is set.",
+    "section": "Deployment choice (classification)"
+  },
+  {
+    "chunk_id": "ae4b96001340fe50",
+    "source": "DECISIONS.md",
+    "text": "`evals/classification_golden.json` holds **25 hand-validated examples** drawn from the processed training distribution (short issues where both TF-IDF+LR and fine-tuned BERT-tiny agree with the mapped label). This keeps the golden gate stable while staying separate from the temporal test split.\n\nThresholds live in `eval_thresholds.yaml` and are enforced by `scripts/run_classification_eval.py`.\n\nRAG, chatbot memory, widget embedding, pgvector, tracing UI, and CSP are **out of scope** until later week tasks.",
+    "section": "Classification golden set"
+  },
+  {
+    "chunk_id": "1112613a72137a4c",
+    "source": "models/bert_tiny_classifier/MODEL_CARD.md",
+    "text": "| Field | Value |\n|-------|-------|\n| **Name** | `bert-tiny-issue-classifier` |\n| **Base model** | [prajjwal1/bert-tiny](https://huggingface.co/prajjwal1/bert-tiny) |\n| **Task** | Multi-class text classification (GitHub issues) |\n| **Classes** | `bug`, `feature`, `docs`, `question` |\n| **Artifact path** | `models/bert_tiny_classifier/` |",
+    "section": "Model summary"
+  },
+  {
+    "chunk_id": "bd97a110b887bee1",
+    "source": "models/bert_tiny_classifier/MODEL_CARD.md",
+    "text": "Classify closed GitHub issue text from **pandas-dev/pandas** into maintainer triage categories. Served via `POST /predict` in the Maintainer's Copilot API.\n\n**Out of scope:** pull requests, issues outside the training label distribution, non-English text (not evaluated).",
+    "section": "Intended use"
+  },
+  {
+    "chunk_id": "c4191e511a5de675",
+    "source": "models/bert_tiny_classifier/MODEL_CARD.md",
+    "text": "| Split | File | Rows |\n|-------|------|-----:|\n| Train | `datasets/processed/train.csv` | 1183 |\n| Validation | `datasets/processed/val.csv` | 252 |\n| Test | `datasets/processed/test.csv` | 257 |\n\n- **Source:** closed issues from `pandas-dev/pandas` (see `scripts/fetch_issues.py`, `scripts/preprocess_issues.py`).\n- **Split policy:** temporal (per-class 70/15/15), sorted by `closed_at`.\n- **Training data SHA-256:** `d3f31f1a62fb946a72980f423146a14f2c454a0171c476edccb6a0bc07a7381d`",
+    "section": "Training data"
+  },
+  {
+    "chunk_id": "63ea2a6dd12bdb86",
+    "source": "models/bert_tiny_classifier/MODEL_CARD.md",
+    "text": "| Parameter | Value |\n|-----------|-------|\n| Encoder | BERT-tiny (hidden size 128, 2 layers) |\n| Max sequence length | 512 |\n| Tokenizer | `BertTokenizer` |\n| Padding | `max_length` |\n| Epochs | 3 (early stopping patience 1 on val macro F1) |\n| Batch size | 16 |\n| Optimizer | AdamW (Hugging Face Trainer default) |\n| Loss | Weighted cross-entropy (`class_weight=\"balanced\"`) |\n| Best checkpoint metric | Validation macro F1 |\n| Freeze policy | Full fine-tune (all encoder + classification head trained) |",
+    "section": "Architecture & hyperparameters"
+  },
+  {
+    "chunk_id": "5111abb287dfa271",
+    "source": "models/bert_tiny_classifier/MODEL_CARD.md",
+    "text": "From `reports/transformer_metrics.json`:\n\n| Metric | Value |\n|--------|------:|\n| Accuracy | 0.887 |\n| Macro F1 | 0.781 |\n| bug F1 | 0.930 |\n| feature F1 | 0.805 |\n| docs F1 | 0.911 |\n| question F1 | 0.476 |",
+    "section": "Metrics (held-out test split)"
+  },
+  {
+    "chunk_id": "9f55046f402a1115",
+    "source": "models/bert_tiny_classifier/MODEL_CARD.md",
+    "text": "| Asset | SHA-256 |\n|-------|---------|\n| `model.safetensors` | `3944074051d689fab9643157ccdb83a79952ab1d43d18ea9c3b22dc61997614a` |",
+    "section": "Artifact integrity"
+  },
+  {
+    "chunk_id": "411c514af552ea0a",
+    "source": "models/bert_tiny_classifier/MODEL_CARD.md",
+    "text": "- **Runtime:** PyTorch, CPU (`torch.no_grad()`)\n- **Latency:** ~7 ms/issue (local CPU benchmark; see `reports/model_comparison.md`)\n- **Training script:** `train_transformer.py`",
+    "section": "Inference"
+  },
+  {
+    "chunk_id": "1b71bfc264a01e9c",
+    "source": "models/bert_tiny_classifier/MODEL_CARD.md",
+    "text": "- Weak on minority class **question** (low recall on test).\n- Truncates issue bodies at 512 tokens.\n- Label mapping heuristics in preprocessing may not generalize to other repositories without relabeling/retraining.",
+    "section": "Limitations"
+  },
+  {
+    "chunk_id": "9fc04279951808a0",
+    "source": "models/bert_tiny_classifier/MODEL_CARD.md",
+    "text": "Model reflects historical maintainer labeling on a single open-source project; predictions should assist triage, not replace human judgment.",
+    "section": "Ethical considerations"
+  },
+  {
+    "chunk_id": "68c6b253fcd7cd8f",
+    "source": "reports/model_comparison.md",
+    "text": "Three-way comparison on the same temporal test set (`datasets/processed/test.csv`).\n\n| Model | Accuracy | Macro F1 | Per-class F1 | Latency (ms) | Estimated Cost |\n|---|---:|---:|---|---:|---|\n| Logistic Regression | 0.907 | 0.816 | bug: 0.95, feature: 0.88, docs: 0.90, question: 0.54 | 0.6 | $0.00 |\n| BERT-tiny | 0.887 | 0.781 | bug: 0.93, feature: 0.80, docs: 0.91, question: 0.48 | 7.2 | $0.00 (local CPU) |\n| LLM baseline | 0.918 | 0.812 | bug: 0.96, feature: 0.90, docs: 0.89, question: 0.50 | 7525.9 | $0.0301 (test split, 257 issues) |",
+    "section": "Model comparison (test split)"
+  },
+  {
+    "chunk_id": "e3a013029a4ab4db",
+    "source": "reports/classical_metrics.json",
+    "text": "Report: reports/classical_metrics.json\nvalidation: accuracy=0.9246031746031746, macro_f1=0.8575744607357619\ntest: accuracy=0.9066147859922179, macro_f1=0.8159102415199976",
+    "section": "document"
+  },
+  {
+    "chunk_id": "00eac675649c2a49",
+    "source": "reports/golden_eval_report.json",
+    "text": "Report: reports/golden_eval_report.json\nclassical: accuracy=0.96, macro_f1=0.9641025641025641\nbert_tiny: accuracy=1.0, macro_f1=1.0\nllm: null",
+    "section": "document"
+  },
+  {
+    "chunk_id": "e4de36837c3f50ae",
+    "source": "reports/llm_metrics.json",
+    "text": "Report: reports/llm_metrics.json\nmodel: \"llama-3.1-8b-instant\"\ntest: accuracy=0.9182879377431906, macro_f1=0.811893664460732\nlatency_ms_avg: 7525.9\nlatency_ms_p50: 8388.56\ntoken_usage: {\"prompt_tokens\": 198449, \"completion_tokens\": 522}\nestimated_cost_usd: 0.0301\nnum_examples: 257",
+    "section": "document"
+  },
+  {
+    "chunk_id": "bef1bae0a2a30a74",
+    "source": "reports/rag_eval_summary.json",
+    "text": "Report: reports/rag_eval_summary.json\ngenerated_at: \"2026-05-19T20:12:43.027252+00:00\"\nretrieval: {\"exit_code\": 0, \"passed\": 7, \"total\": 7, \"accuracy\": 1.0, \"stdout_tail\": [\"RETRIEVAL PASS classical_metrics top_score=0.399 sources=['DECISIONS.md', 'reports/classical_metrics.json', 'models/bert_tiny_classifier/MODEL_CARD.md']\", \"RETRIEVAL PASS golden_eval top_score=0.560 sources=['DECISIONS.md', 'reports/golden_eval_report.json', 'README.md']\", \"RETRIEVAL PASS prediction_audit top_score=0.462 s\nclassification_golden: {\"classical\": {\"accuracy\": 0.96, \"macro_f1\": 0.9641025641025641, \"per_class_f1\": {\"bug\": 0.9230769230769231, \"feature\": 0.9333333333333333, \"docs\": 1.0, \"question\": 1.0}}, \"bert_tiny\": {\"accuracy\": 1.0, \"macro_f1\": 1.0, \"per_class_f1\": {\"bug\": 1.0, \"feature\": 1.0, \"docs\": 1.0,",
+    "section": "document"
+  },
+  {
+    "chunk_id": "eac29deaf467f13d",
+    "source": "reports/rag_eval_summary.json",
+    "text": "tion\": 1.0}}, \"bert_tiny\": {\"accuracy\": 1.0, \"macro_f1\": 1.0, \"per_class_f1\": {\"bug\": 1.0, \"feature\": 1.0, \"docs\": 1.0, \"question\": 1.0}}, \"llm\": null}\nthresholds_file: \"/Users/apple/Desktop/Maintainer's Copilot/eval_thresholds.yaml\"",
+    "section": "document"
+  },
+  {
+    "chunk_id": "da1f7f57118abc99",
+    "source": "reports/system_health.json",
+    "text": "Report: reports/system_health.json\ngenerated_at: \"2026-05-19T20:12:43.089554+00:00\"\nstartup_validation: {\"classifier_artifacts\": {\"models/bert_tiny_classifier/config.json\": true, \"models/bert_tiny_classifier/model.safetensors\": true, \"models/bert_tiny_classifier/MODEL_CARD.md\": true, \"eval_thresholds.yaml\": true, \"reports/transformer_metrics.json\": true}, \"rag_artifacts\": {\"chunks\": true, \"faiss_index\": true, \"bm25\": true, \"rag_required\": \"false\"}, \"all_classifier_ok\": true, \"all_rag_ok\": true}\nclassifier: {\"path\": \"models/bert_tiny_classifier\", \"loaded_at_runtime\": true, \"config\": {\"add_cross_attention\": false, \"architectures\": [\"BertForSequenceClassification\"], \"attention_probs_dropout_prob\": 0.1, \"bos_token_id\": null, \"classifier_dropout\": null, \"dtype\": \"float32\", \"eos_token_id\": null,",
+    "section": "document"
+  },
+  {
+    "chunk_id": "a9c4af1b62b9b662",
+    "source": "reports/system_health.json",
+    "text": "on_probs_dropout_prob\": 0.1, \"bos_token_id\": null, \"classifier_dropout\": null, \"dtype\": \"float32\", \"eos_token_id\": null, \"hidden_act\": \"gelu\", \"hidden_dropout_prob\": 0.1, \"hidden_size\": 128, \"id2label\": {\"0\": \"bug\", \"1\": \"feature\", \nrag: {\"embedding_model\": \"all-MiniLM-L6-v2\", \"retrieval_mode\": \"hybrid\", \"hybrid_alpha\": 0.65, \"rerank_enabled\": \"true\", \"reranker_mode\": \"semantic\", \"vector_backend\": \"faiss\", \"top_k\": 5, \"retrieval_top_k\": 10, \"index_meta\": {\"backend\": \"faiss\", \"dimension\": 384, \"num_chunks\": 49, \"index_type\": \"IndexFlatIP\"}, \"chunk_count\": 49, \"unique_sources\": 8}\nmetrics: {\"classical\": {\"validation\": {\"accuracy\": 0.9246031746031746, \"macro_f1\": 0.8575744607357619, \"per_class_f1\": {\"bug\": 0.9526813880126183, \"feature\": 0.868421052631579, \"docs\": 0.9425287356321839, \"question",
+    "section": "document"
+  },
+  {
+    "chunk_id": "0a496ac873975368",
+    "source": "reports/system_health.json",
+    "text": "7357619, \"per_class_f1\": {\"bug\": 0.9526813880126183, \"feature\": 0.868421052631579, \"docs\": 0.9425287356321839, \"question\": 0.6666666666666666}, \"confusion_matrix\": [[151, 4, 0, 1], [3, 33, 0, 0], [4, 0, 41, 1], [3, 3, 0, 8]], \"classification_report\": {\"bug\": {\"precision\": 0.937888198757764, \"recall\": 0.96794871794\nevals: {\"golden_eval_report.json\": {\"classical\": {\"accuracy\": 0.96, \"macro_f1\": 0.9641025641025641, \"per_class_f1\": {\"bug\": 0.9230769230769231, \"feature\": 0.9333333333333333, \"docs\": 1.0, \"question\": 1.0}}, \"bert_tiny\": {\"accuracy\": 1.0, \"macro_f1\": 1.0, \"per_class_f1\": {\"bug\": 1.0, \"feature\": 1.0, \"docs\": 1.0, \"question\": 1.0}}, \"llm\": null}, \"rag_eval_summary.json\": {\"generated_at\": \"2026-05-19T20:12:4",
+    "section": "document"
+  },
+  {
+    "chunk_id": "2b2d5cbabd612e43",
+    "source": "reports/transformer_metrics.json",
+    "text": "Report: reports/transformer_metrics.json\nvalidation: accuracy=0.9206349206349206, macro_f1=0.8051001555499306\ntest: accuracy=0.8871595330739299, macro_f1=0.780569758821614",
+    "section": "document"
+  }
+]

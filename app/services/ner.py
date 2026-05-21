@@ -1,5 +1,5 @@
 from app.domain.ner import NerRequest, NerResponse
-from app.infra import ner as ner_extractor
+from app.ml import ner as ner_extractor
 
 
 def extract_entities(request: NerRequest) -> NerResponse:

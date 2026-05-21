@@ -56,7 +56,7 @@ def benchmark_classical(samples: list[str], repeats: int = 50) -> float:
 
 
 def benchmark_bert(samples: list[str], repeats: int = 50) -> float:
-    from app.infra.classifier import IssueClassifier
+    from app.ml.classifier import IssueClassifier
 
     classifier = IssueClassifier.load(MODEL_DIR)
     latencies: list[float] = []

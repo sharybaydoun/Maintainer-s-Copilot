@@ -1,6 +1,15 @@
+# Training / evaluation extras — NOT installed in the API runtime image.
+# Layer this on top of requirements-runtime.txt for local training and CI evals:
+#
+#   pip install --no-cache-dir -r requirements-runtime.txt -r requirements-ml.txt
+
+# Classical ML training (LogReg baseline, metrics, plots)
 scikit-learn>=1.5.0
 matplotlib>=3.9.0
-transformers>=4.44.0
-torch>=2.0.0
+
+# Transformer fine-tuning extras
 datasets>=2.20.0
 accelerate>=0.33.0
+
+# Eval thresholds + golden eval scripts
+pyyaml>=6.0.0

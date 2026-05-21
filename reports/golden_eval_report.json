@@ -19,5 +19,23 @@
       "question": 1.0
     }
   },
-  "llm": null
+  "llm": null,
+  "generated_at": "2026-05-20T19:20:33.101741+00:00",
+  "generated_at_rag": "2026-05-20T19:20:33.101741+00:00",
+  "git_sha": "9a45b51224060179a76fc753f7c5381ca6b78683",
+  "rag": {
+    "n": 25,
+    "retrieval_accuracy": 0.88,
+    "hit_at_5": 1.0,
+    "mrr_at_10": 0.98
+  },
+  "rag_thresholds": {
+    "retrieval_accuracy_min": 0.75,
+    "hit_at_5_min": 0.8,
+    "mrr_at_10_min": 0.6,
+    "faithfulness_min": 0.7,
+    "answer_relevancy_min": 0.7,
+    "judge_agreement_min": 0.6
+  },
+  "rag_failures": []
 }

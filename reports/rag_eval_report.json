@@ -1,0 +1,428 @@
+{
+  "generated_at": "2026-05-20T19:20:33.101741+00:00",
+  "git_sha": "9a45b51224060179a76fc753f7c5381ca6b78683",
+  "thresholds": {
+    "retrieval_accuracy_min": 0.75,
+    "hit_at_5_min": 0.8,
+    "mrr_at_10_min": 0.6,
+    "faithfulness_min": 0.7,
+    "answer_relevancy_min": 0.7,
+    "judge_agreement_min": 0.6
+  },
+  "failures": [],
+  "summary": {
+    "n": 25,
+    "retrieval_accuracy": 0.88,
+    "hit_at_5": 1.0,
+    "mrr_at_10": 0.98
+  },
+  "retrieval": {
+    "n": 25,
+    "retrieval_accuracy": 0.88,
+    "hit_at_5": 1.0,
+    "mrr_at_10": 0.98,
+    "per_case": [
+      {
+        "id": "startup_validation",
+        "category": "retrieval",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.3789,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "README.md",
+          "README.md",
+          "README.md",
+          "README.md"
+        ]
+      },
+      {
+        "id": "deployment_model",
+        "category": "retrieval",
+        "passed": true,
+        "top_source": "models/bert_tiny_classifier/MODEL_CARD.md",
+        "top_score": 0.3321,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "models/bert_tiny_classifier/MODEL_CARD.md",
+          "DECISIONS.md",
+          "README.md",
+          "README.md",
+          "models/bert_tiny_classifier/MODEL_CARD.md"
+        ]
+      },
+      {
+        "id": "bert_tiny_training",
+        "category": "retrieval",
+        "passed": true,
+        "top_source": "models/bert_tiny_classifier/MODEL_CARD.md",
+        "top_score": 0.4281,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "models/bert_tiny_classifier/MODEL_CARD.md",
+          "reports/system_health.json",
+          "models/bert_tiny_classifier/MODEL_CARD.md",
+          "models/bert_tiny_classifier/MODEL_CARD.md",
+          "models/bert_tiny_classifier/MODEL_CARD.md"
+        ]
+      },
+      {
+        "id": "vault_secrets",
+        "category": "retrieval",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.5844,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "README.md",
+          "README.md",
+          "README.md",
+          "README.md"
+        ]
+      },
+      {
+        "id": "classical_metrics",
+        "category": "retrieval",
+        "passed": true,
+        "top_source": "DECISIONS.md",
+        "top_score": 0.3994,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "DECISIONS.md",
+          "reports/classical_metrics.json",
+          "models/bert_tiny_classifier/MODEL_CARD.md",
+          "reports/rag_eval_summary.json",
+          "models/bert_tiny_classifier/MODEL_CARD.md"
+        ]
+      },
+      {
+        "id": "golden_eval",
+        "category": "retrieval",
+        "passed": true,
+        "top_source": "DECISIONS.md",
+        "top_score": 0.5605,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "DECISIONS.md",
+          "reports/rag_eval_summary.json",
+          "reports/golden_eval_report.json",
+          "README.md",
+          "models/bert_tiny_classifier/MODEL_CARD.md"
+        ]
+      },
+      {
+        "id": "prediction_audit",
+        "category": "retrieval",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.4622,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "README.md",
+          "DECISIONS.md",
+          "reports/rag_eval_summary.json",
+          "README.md"
+        ]
+      },
+      {
+        "id": "rag_hybrid_alpha",
+        "category": "retrieval",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.344,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "README.md",
+          "README.md",
+          "README.md",
+          "models/bert_tiny_classifier/MODEL_CARD.md"
+        ]
+      },
+      {
+        "id": "rag_corpus_build",
+        "category": "retrieval",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.5442,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "README.md",
+          "README.md",
+          "README.md",
+          "README.md"
+        ]
+      },
+      {
+        "id": "minio_artifacts",
+        "category": "retrieval",
+        "passed": true,
+        "top_source": "models/bert_tiny_classifier/MODEL_CARD.md",
+        "top_score": 0.3843,
+        "rank_at_5": 2,
+        "rank_at_10": 2,
+        "retrieved_sources": [
+          "models/bert_tiny_classifier/MODEL_CARD.md",
+          "README.md",
+          "README.md",
+          "reports/transformer_metrics.json",
+          "reports/system_health.json"
+        ]
+      },
+      {
+        "id": "classifier_to_predict_chain",
+        "category": "multi_hop",
+        "passed": true,
+        "top_source": "DECISIONS.md",
+        "top_score": 0.558,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "DECISIONS.md",
+          "DECISIONS.md",
+          "reports/system_health.json",
+          "models/bert_tiny_classifier/MODEL_CARD.md",
+          "README.md"
+        ]
+      },
+      {
+        "id": "hybrid_retrieval_pipeline",
+        "category": "multi_hop",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.5711,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "DECISIONS.md",
+          "README.md",
+          "README.md",
+          "reports/rag_eval_summary.json"
+        ]
+      },
+      {
+        "id": "memory_two_tier",
+        "category": "multi_hop",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.3779,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "README.md",
+          "DECISIONS.md",
+          "DECISIONS.md",
+          "DECISIONS.md"
+        ]
+      },
+      {
+        "id": "pgvector_extension_setup",
+        "category": "multi_hop",
+        "passed": false,
+        "top_source": "README.md",
+        "top_score": 0.1966,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "reports/system_health.json",
+          "DECISIONS.md",
+          "DECISIONS.md",
+          "README.md"
+        ]
+      },
+      {
+        "id": "tool_classify_when_to_call",
+        "category": "tool_assisted",
+        "passed": true,
+        "top_source": "DECISIONS.md",
+        "top_score": 0.4271,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "DECISIONS.md",
+          "models/bert_tiny_classifier/MODEL_CARD.md",
+          "models/bert_tiny_classifier/MODEL_CARD.md",
+          "DECISIONS.md",
+          "README.md"
+        ]
+      },
+      {
+        "id": "tool_summarize_thread_usage",
+        "category": "tool_assisted",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.4545,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "DECISIONS.md",
+          "reports/rag_eval_summary.json",
+          "DECISIONS.md",
+          "models/bert_tiny_classifier/MODEL_CARD.md"
+        ]
+      },
+      {
+        "id": "tool_search_docs_grounding",
+        "category": "tool_assisted",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.4424,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "DECISIONS.md",
+          "README.md",
+          "README.md",
+          "reports/rag_eval_summary.json"
+        ]
+      },
+      {
+        "id": "tool_write_memory_rules",
+        "category": "tool_assisted",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.3966,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "README.md",
+          "DECISIONS.md",
+          "DECISIONS.md",
+          "DECISIONS.md"
+        ]
+      },
+      {
+        "id": "memory_session_redis_ttl",
+        "category": "memory_aware",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.4298,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "models/bert_tiny_classifier/MODEL_CARD.md",
+          "models/bert_tiny_classifier/MODEL_CARD.md",
+          "DECISIONS.md",
+          "models/bert_tiny_classifier/MODEL_CARD.md"
+        ]
+      },
+      {
+        "id": "memory_long_term_audit",
+        "category": "memory_aware",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.3561,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "DECISIONS.md",
+          "models/bert_tiny_classifier/MODEL_CARD.md",
+          "DECISIONS.md",
+          "README.md"
+        ]
+      },
+      {
+        "id": "widget_allowed_origins",
+        "category": "widget_security",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.4858,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "README.md",
+          "README.md",
+          "DECISIONS.md",
+          "reports/rag_eval_summary.json"
+        ]
+      },
+      {
+        "id": "widget_csp_frame_ancestors",
+        "category": "widget_security",
+        "passed": false,
+        "top_source": "README.md",
+        "top_score": 0.2075,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "README.md",
+          "reports/system_health.json",
+          "DECISIONS.md",
+          "DECISIONS.md"
+        ]
+      },
+      {
+        "id": "widget_embed_loader",
+        "category": "widget_security",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.364,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "README.md",
+          "DECISIONS.md",
+          "README.md",
+          "reports/system_health.json"
+        ]
+      },
+      {
+        "id": "redaction_layer_scope",
+        "category": "widget_security",
+        "passed": true,
+        "top_source": "README.md",
+        "top_score": 0.2522,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "README.md",
+          "README.md",
+          "DECISIONS.md",
+          "README.md"
+        ]
+      },
+      {
+        "id": "jwt_auth_login_flow",
+        "category": "widget_security",
+        "passed": false,
+        "top_source": "README.md",
+        "top_score": 0.1837,
+        "rank_at_5": 1,
+        "rank_at_10": 1,
+        "retrieved_sources": [
+          "README.md",
+          "README.md",
+          "README.md",
+          "DECISIONS.md",
+          "models/bert_tiny_classifier/MODEL_CARD.md"
+        ]
+      }
+    ]
+  },
+  "answers": null
+}

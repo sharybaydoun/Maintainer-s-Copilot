@@ -1,11 +1,67 @@
+# ---- Python -------------------------------------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
-.env
+*.so
+
+# ---- Virtualenvs --------------------------------------------------------
 .venv/
 venv/
+env/
+
+# ---- Build / packaging --------------------------------------------------
 dist/
+build/
 *.egg-info/
+
+# ---- Test / type / lint caches ------------------------------------------
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# ---- Secrets & local config --------------------------------------------
+.env
+.env.local
+*.env.local
+# Keep the documented examples tracked
+!.env.example
+!.env.dev.example
+
+# ---- OS / editor noise --------------------------------------------------
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# ---- Node / widget -------------------------------------------------------
+node_modules/
+widget/node_modules/
+widget/dist/
+chatbot/.streamlit/secrets.toml
+
+# ---- Generated runtime artifacts ----------------------------------------
+# RAG index regenerated on Docker build via scripts/build_rag_index.py.
+rag_index/
+
+# Reports: the JSON files are eval truth and must be tracked. Generated
+# dashboards/summaries that change on every run are not.
+reports/eval_dashboard.html
+reports/system_health.json
+reports/rag_eval_summary.json
+
+# ---- artifacts/ (regenerable training output) ---------------------------
+# Heavy files inside artifacts/ shouldn't bloat git; keep the layout.
+artifacts/checkpoints/*
+artifacts/models/*
+artifacts/reports/*
+artifacts/rag/*
+!artifacts/**/.gitkeep
+!artifacts/README.md
+
+# ---- Misc local scratch -------------------------------------------------
+*.pid
+*.log
+.cache/

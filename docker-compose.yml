@@ -1,6 +1,7 @@
 services:
   api:
     build: .
+    restart: unless-stopped
     ports:
       - "${API_PORT:-8000}:8000"
     env_file:
@@ -8,14 +9,28 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
+      CHAT_MEMORY_TTL_SECONDS: "3600"
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET: ${MINIO_BUCKET}
       MINIO_SECURE: "false"
+      MINIO_UPLOAD_REPORTS: "true"
       VAULT_ADDR: http://vault:8200
       VAULT_TOKEN: ${VAULT_DEV_ROOT_TOKEN_ID}
+      VAULT_SECRET_PATH: copilot
+      VAULT_KV_MOUNT: secret
+      VAULT_REQUIRED: "false"
+      OPENAI_BASE_URL: https://api.groq.com/openai/v1
+      CORS_ORIGINS: http://localhost:8501,http://localhost:5173,http://localhost:8080,http://chatbot:8501,http://widget,http://host
+      OTEL_SERVICE_NAME: maintainers-copilot-api
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      # Phase 4: where the React widget iframe is served from (used by /widget.js)
+      WIDGET_BASE_URL: http://localhost:${WIDGET_PORT:-5173}
+      PUBLIC_API_URL: http://localhost:${API_PORT:-8000}
     depends_on:
+      migrate:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:
@@ -24,18 +39,84 @@ services:
         condition: service_healthy
       vault:
         condition: service_healthy
+      jaeger:
+        condition: service_started
     healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')",
-        ]
-      interval: 10s
+      # Unauthenticated readiness probe — works even when AUTH_REQUIRED=true.
+      # /admin/health/full requires admin JWT in that mode; healthchecks
+      # must not need credentials.
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health/ready"]
+      interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 90s
+
+  chatbot:
+    build:
+      context: .
+      dockerfile: chatbot/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${CHATBOT_PORT:-8501}:8501"
+    env_file:
+      - .env
+    environment:
+      API_URL: http://api:8000
+      CHATBOT_USER: ${CHATBOT_USER:-admin}
+      CHATBOT_PASSWORD: ${CHATBOT_PASSWORD:-copilot}
+    depends_on:
+      api:
+        condition: service_healthy
+    # Explicit compose-level probe so `docker compose ps` shows green/healthy.
+    # Mirrors the HEALTHCHECK in chatbot/Dockerfile.
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health')"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  widget:
+    build:
+      context: widget
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:${API_PORT:-8000}
+    restart: unless-stopped
+    ports:
+      - "${WIDGET_PORT:-5173}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  host:
+    build:
+      context: host
+      dockerfile: Dockerfile
+      args:
+        API_URL: http://localhost:${API_PORT:-8000}
+        WIDGET_ID: ${DEMO_WIDGET_ID:-00000000-0000-0000-0000-000000000000}
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-8080}:80"
+    depends_on:
+      - widget
+      - api
+
+  migrate:
+    build: .
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    command: alembic upgrade head
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   postgres:
     image: pgvector/pgvector:pg16
@@ -84,6 +165,16 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  jaeger:
+    # Jaeger all-in-one with native OTLP receiver (port 4318 HTTP).
+    # UI: http://localhost:${JAEGER_UI_PORT:-16686}
+    image: jaegertracing/all-in-one:1.57
+    ports:
+      - "${JAEGER_UI_PORT:-16686}:16686"
+      - "${JAEGER_OTLP_HTTP_PORT:-4318}:4318"
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
 
   vault:
     image: hashicorp/vault:1.18

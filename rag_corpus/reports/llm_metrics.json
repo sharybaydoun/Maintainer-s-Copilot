@@ -1,0 +1,60 @@
+{
+  "model": "llama-3.1-8b-instant",
+  "test": {
+    "accuracy": 0.9182879377431906,
+    "macro_f1": 0.811893664460732,
+    "per_class_f1": {
+      "bug": 0.9565217391304348,
+      "feature": 0.8974358974358975,
+      "docs": 0.8936170212765957,
+      "question": 0.5
+    },
+    "classification_report": {
+      "bug": {
+        "precision": 0.9390243902439024,
+        "recall": 0.9746835443037974,
+        "f1-score": 0.9565217391304348,
+        "support": 158.0
+      },
+      "feature": {
+        "precision": 0.8536585365853658,
+        "recall": 0.9459459459459459,
+        "f1-score": 0.8974358974358975,
+        "support": 37.0
+      },
+      "docs": {
+        "precision": 0.8936170212765957,
+        "recall": 0.8936170212765957,
+        "f1-score": 0.8936170212765957,
+        "support": 47.0
+      },
+      "question": {
+        "precision": 1.0,
+        "recall": 0.3333333333333333,
+        "f1-score": 0.5,
+        "support": 15.0
+      },
+      "accuracy": 0.9182879377431906,
+      "macro avg": {
+        "precision": 0.921574987026466,
+        "recall": 0.7868949612149182,
+        "f1-score": 0.811893664460732,
+        "support": 257.0
+      },
+      "weighted avg": {
+        "precision": 0.9219891809813039,
+        "recall": 0.9182879377431906,
+        "f1-score": 0.9098660038433342,
+        "support": 257.0
+      }
+    }
+  },
+  "latency_ms_avg": 7525.9,
+  "latency_ms_p50": 8388.56,
+  "token_usage": {
+    "prompt_tokens": 198449,
+    "completion_tokens": 522
+  },
+  "estimated_cost_usd": 0.0301,
+  "num_examples": 257
+}
